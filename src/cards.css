@@ -34,7 +34,23 @@
 .offer-body h3, .point-price { color: var(--brand-graphite); }
 .offer-body > p, .point-price small { color: #6b6d72; }
 .offer-bottom { border-color: #eceef0; }
-.offer-body .button.secondary { color: #36383c; border-color: #d9dce0; background: #fafafa; }
+.offer-body .button.secondary {
+  color: #a52d24;
+  border-color: #df8c83;
+  background: #fff0ed;
+  font-weight: 600;
+  min-height: 44px;
+  box-shadow: 0 2px 6px #d9403210;
+}
+.offer-body .button.secondary:focus-visible { outline-color: #b83228; }
+@media (hover: hover) {
+  .offer-body .button.secondary:hover {
+    color: #fff;
+    background: #bd3429;
+    border-color: #bd3429;
+    filter: none;
+  }
+}
 
 .rappel-card,
 .rappel-wide {
