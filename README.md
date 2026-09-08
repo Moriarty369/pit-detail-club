@@ -57,12 +57,23 @@ Se utiliza [Vite 6](https://v6.vite.dev/guide/) por compatibilidad con el Node 2
 
 ## Beta compartida y repositorio
 
-El código se conserva en un repositorio Git local y en el repositorio fuente de ChatGPT Sites. No es un repositorio de GitHub. Ramas: `main` (versión publicada), `develop` (integración) y `beta/colaboracion` (trabajo de la beta). Las tres apuntarán a la primera beta una vez validada; las próximas mejoras parten de `develop` en una rama nueva.
+Ramas: `main` (versión publicable), `develop` (integración) y `beta/colaboracion` (trabajo de la beta). Las próximas mejoras parten de `develop` en una rama nueva. La primera copia remota está en ChatGPT Sites (`origin`); el destino preparado para publicar es GitHub Pages, mediante el remoto `github` cuando se complete la autenticación.
 
-El despliegue se realiza desde una versión guardada de Sites cuyo commit coincide con `main`. La configuración está en `.openai/hosting.json`. `scripts/package-site.py` empaqueta únicamente `dist/` y ese manifiesto. El ZIP/tar de publicación nunca incluye código fuente, documentos OSINT ni fotos sin revisar. No hay publicación automática por cada push.
+`.github/workflows/pages.yml` ejecuta las pruebas y publica en Pages al recibir cambios en `main`. `develop` y las ramas de trabajo no publican automáticamente. Vite recibe `PIT_BASE_PATH=/<nombre-del-repositorio>/` en el workflow. Para probar esa compilación localmente:
+
+```sh
+PIT_BASE_PATH=/pit-detail-club/ npm run build
+PIT_BASE_PATH=/pit-detail-club/ npm run preview
+```
+
+Abrir http://127.0.0.1:4173/pit-detail-club/. El nombre del repositorio en el workflow se obtiene automáticamente del evento de GitHub.
+
+Una vez verificada la URL pública, `node scripts/share-qr.js https://URL-PUBLICA/ ../compartir` genera PNG y SVG del QR y un texto para compartir. No generar el QR final antes de comprobar que la publicación responde.
 
 «Aportar idea» prepara un comentario que el socio puede copiar y enviar al grupo por su cuenta. No se reciben ni almacenan comentarios en un servidor. Cada dispositivo mantiene su propia demo.
 
-El acceso de la beta se configura para cualquiera con el enlace. `noindex` y `robots.txt` solicitan que no se indexe, pero no son control de acceso. No introducir datos reales.
+El acceso a la beta es público. `noindex` y `robots.txt` solicitan que no se indexe, pero no son control de acceso. No introducir datos reales. Esta beta no cobra, no recibe reservas y no permite canjes comerciales reales.
 
-El alojamiento Sites está incluido durante su beta dentro de los límites del plan de ChatGPT. No se ha contratado un plan adicional ni un dominio. Los límites pueden cambiar: https://learn.chatgpt.com/docs/sites
+GitHub Pages permite alojamiento de proyectos en repositorios públicos con GitHub Free. Esta publicación es una demostración para validar ideas; el sistema comercial definitivo requerirá un alojamiento y un backend apropiados. Documentación: https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages
+
+El intento inicial en Sites conserva su identificador en `.openai/hosting.json`, su remoto y la versión guardada. Falló al publicar por un error interno 409 de callbacks. No se debe crear otro Site para este mismo proyecto. `scripts/package-site.py` permite empaquetar la compilación estática para retomar ese alojamiento; para ello compilar con la base predeterminada `/`.
