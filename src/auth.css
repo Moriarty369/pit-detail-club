@@ -1,0 +1,33 @@
+.auth-locked::after { display: none; }
+.auth-shell { min-height: 100dvh; display: grid; grid-template-columns: 1fr 1fr; }
+.auth-brand-panel { background: #000; color: #fff; display: flex; flex-direction: column; justify-content: center; padding: clamp(32px, 7vw, 110px); }
+.auth-brand-panel .brand-image { width: min(100%, 320px); margin-bottom: 30px; }
+.auth-brand-panel h2 { font-size: clamp(28px, 3vw, 46px); font-weight: 500; line-height: 1.15; letter-spacing: -1.5px; }
+.auth-brand-panel p { font-size: 13px; color: #aaa; max-width: 360px; margin-top: 20px; }
+.auth-brand-panel .racing-stripes { margin-top: 38px; }
+.auth-form-panel { display: flex; justify-content: center; align-items: center; padding: 46px 28px; width: 100%; margin: 0; max-width: none; }
+.auth-content { width: 100%; max-width: 390px; }
+.auth-content h1 { font-size: 35px; }
+.auth-subtitle { color: #777d72; font-size: 13px; margin-top: 12px; }
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; background: #e9ebe2; border-radius: 8px; margin: 28px 0 23px; gap: 4px; }
+.auth-tab { border: 0; border-radius: 5px; padding: 11px 8px; background: none; font-size: 12px; font-weight: 500; }
+.auth-tab.selected { background: #fff; box-shadow: 0 2px 5px #202b1210; }
+.auth-form-panel form { gap: 18px; }
+.auth-form-panel .button.full { margin-top: 0; }
+.auth-note { margin-top: 22px; padding-top: 18px; border-top: 1px solid #e1e4d8; font-size: 11px; color: #7c8473; line-height: 1.7; }
+.auth-message { margin-top: 18px; padding: 12px 14px; border-radius: 6px; background: #edf1e4; color: #4b6037; font-size: 12px; line-height: 1.7; }
+.auth-message.error { background: #f9e9e6; color: #983e32; }
+.auth-message:empty { display: none; }
+.auth-loading { min-height: 100dvh; display: grid; place-items: center; color: #69745e; font-size: 14px; }
+.auth-back { margin-top: 20px; }
+.signout-button { color: #aaa; }
+@media (max-width: 640px) {
+  .auth-shell { display: block; }
+  .auth-brand-panel { padding: 14px 24px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 19px; }
+  .auth-brand-panel .brand-image { width: 98px; margin: 0; }
+  .auth-brand-panel h2 { font-size: 19px; line-height: 1.2; letter-spacing: -.5px; }
+  .auth-brand-panel p, .auth-brand-panel .racing-stripes { display: none; }
+  .auth-form-panel { padding: 35px 24px; }
+  .auth-content h1 { font-size: 31px; }
+  .auth-tabs { margin-top: 24px; }
+}

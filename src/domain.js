@@ -23,6 +23,15 @@ export function createState(now = new Date()) {
     ], redemptions: [],
   };
 }
+export function createMemberState(customer, now = new Date()) {
+  const base = createState(now);
+  return {
+    ...base,
+    customer: { ...base.customer, ...customer, id: customer.id || `PIT-${uid().slice(0, 8).toUpperCase()}`, vehicle: customer.vehicle || '' },
+    entries: [{ id: 'first-service-demo', service: 'Detailing exterior', cents: 6500, points: 650, mode: 'En local', date: now.toISOString() }],
+    redemptions: [],
+  };
+}
 export function balance(state) { return state.entries.reduce((n, e) => n + e.points, 0) - state.redemptions.filter(r => r.status === 'used').reduce((n, r) => n + r.cost, 0); }
 export function quarterSpend(state, now = new Date()) { return state.entries.filter(e => quarter(new Date(e.date)) === quarter(now)).reduce((n, e) => n + e.cents, 0); }
 export function addService(state, { id, service, cents, mode }, now = new Date()) {

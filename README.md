@@ -20,13 +20,13 @@ Para probar desde otro dispositivo de confianza en la misma Wi-Fi, iniciar con `
 
 ## Recorrido de prueba
 
-1. La cuenta ficticia Alex Mendoza comienza con tres servicios y 1.250 puntos.
-2. En Mi club, canjear «Cuida tu motor» por 1.000 puntos. Generar el código no descuenta puntos.
-3. Pulsar «Probar validación en el negocio», comprobar las condiciones y validar. El saldo pasa a 250. Volver a validar el código produce un error.
-4. Registrar un servicio por $25 desde el panel. Se añaden 250 puntos con la regla inicial.
-5. Consultar Mis servicios y filtrar por local/domicilio. Recargar conserva los datos en este navegador.
-6. En el panel se pueden cambiar las reglas. En Mi perfil se puede probar un registro que crea un perfil vacío; no envía correo.
-7. Restablecer demo vuelve al perfil inicial tras confirmarlo.
+1. Al abrir la app o escanear el QR sin sesión, se muestra «Iniciar sesión / Registrarse». Los enlaces directos a pantallas interiores también muestran el acceso.
+2. Para explorar, introducir `alex@example.com` y confirmar el código de prueba que muestra la propia página. No se envía un correo ni se verifica su propiedad.
+3. También se puede registrar una cuenta ficticia con nombre y correo. Cada cuenta nueva empieza con un detailing exterior de ejemplo por $65 y 650 puntos. El servicio se añade una sola vez al crear la cuenta.
+4. Desde el panel, registrar un servicio por $60 para llegar a 1.250 puntos. Canjear «Cuida tu motor» por 1.000 puntos y validar el código desde el panel: quedan 250. Un código repetido no se acepta.
+5. En Mi perfil, «Cerrar sesión» vuelve al acceso. Al entrar de nuevo, el historial y el saldo se conservan en este navegador y el primer servicio no se duplica.
+6. El código de acceso de prueba dura cinco minutos y se invalida tras cinco intentos erróneos. La sesión dura dos horas en la pestaña; recargar la conserva y cerrar sesión la elimina.
+7. Restablecer demo desde el panel reinicia únicamente la cuenta actual a su primer servicio de ejemplo, previa confirmación. Las demás cuentas se conservan.
 
 ## Reglas provisionales
 
@@ -40,7 +40,7 @@ Las condiciones son hipótesis de producto para probar el recorrido, no tarifas 
 
 ## Límite de esta versión
 
-**Es una demo local, no un sistema seguro para clientes reales.** El estado vive en `localStorage`, puede modificarse desde el navegador y no se comparte entre dispositivos ni sincroniza entre pestañas. El panel es abierto y el registro no verifica el correo. El QR de tarjeta solo contiene un identificador ficticio; no autentica. No hay reservas, notificaciones, cobros ni aplicación de cambios a sistemas externos.
+**Es una demo local, no un sistema seguro para clientes reales.** Las cuentas de prueba viven en `localStorage` y la sesión de la pestaña en `sessionStorage`. Ambos pueden modificarse desde el navegador y no constituyen autenticación real. La interfaz exige pasar por el acceso, pero cualquier persona con control del navegador puede alterar la demo. El registro no verifica el correo, los códigos se muestran en pantalla y no hay contraseñas. El panel de operaciones está disponible para cualquier cuenta de prueba tras entrar; todavía no hay roles de personal. Los datos no se comparten entre dispositivos. Los datos de la demo anterior se conservan en su clave original, sin borrarlos ni asignarlos automáticamente a las nuevas cuentas. El QR de tarjeta solo contiene un identificador ficticio; no autentica. No hay reservas, notificaciones, cobros ni aplicación de cambios a sistemas externos.
 
 Para un piloto real: conectar base de datos y autenticación con verificación, autorización por usuario y rol en el servidor, MFA de administradores, registro de eventos y transacciones atómicas con idempotencia, devoluciones/anulaciones, recuperación de cuenta, límites de solicitudes, términos definitivos y despliegue HTTPS. Revalidar los flujos con concurrencia real antes de incorporar clientes.
 
@@ -55,7 +55,7 @@ PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npx playwright install
 PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npm run test:e2e
 ```
 
-Pruebas de negocio: puntos, duplicados, saldo insuficiente, expiración, canjes, límites de trimestre y cambios de reglas. Pruebas de navegador: recorrido de canje y servicio, persistencia, registro, escape de HTML, generación de QR y ausencia de desbordamiento en móvil.
+Pruebas de negocio: puntos, duplicados, saldo insuficiente, expiración, canjes, límites de trimestre y cambios de reglas. Pruebas de navegador: acceso obligatorio en la interfaz, registro, cierre de sesión, primer servicio sin duplicados, recorrido de canje y servicio, persistencia, escape de HTML, generación de QR y ausencia de desbordamiento en móvil. La simulación de acceso se prueba también con caducidad, intentos fallidos y separación de cuentas.
 
 Se utiliza [Vite 6](https://v6.vite.dev/guide/) por compatibilidad con el Node 20.10 disponible y [node-qrcode](https://github.com/soldair/node-qrcode) para generar QR reales. Dependencias fijadas en `package-lock.json`.
 
