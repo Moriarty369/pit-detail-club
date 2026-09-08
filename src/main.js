@@ -2,6 +2,7 @@ import QRCode from 'qrcode';
 import { offers, services, pointsForCents, createMemberState, balance, quarterSpend, quarter, addService, available, requestReward, redeem, updateRules } from './domain.js';
 import './style.css';
 import './branding.css';
+import './cards.css';
 import './beta.css';
 import './auth.css';
 import { createDemoAuth } from './demo-auth.js';

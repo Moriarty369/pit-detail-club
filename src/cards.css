@@ -1,0 +1,74 @@
+/* Neutral surfaces with restrained accents from the PIT DETAIL logo. */
+:root {
+  --brand-graphite: #202124;
+  --brand-silver: #dfe1e4;
+  --brand-gold: #e7b535;
+  --brand-blue: #327faf;
+}
+
+.offer-card {
+  border-color: var(--brand-silver);
+  box-shadow: 0 5px 18px #20212406;
+}
+
+.offer-art,
+.offer-art.oil,
+.offer-art.detail {
+  --offer-accent: var(--red);
+  color: #f5f5f6;
+  background: linear-gradient(135deg, #303236, #17181a);
+  border-bottom: 3px solid var(--offer-accent);
+}
+.offer-art.oil { --offer-accent: var(--brand-gold); }
+.offer-art.detail { --offer-accent: var(--brand-blue); }
+.offer-tag { color: #e4e5e7; border-color: #ffffff30; background: #ffffff08; }
+.art-symbol,
+.oil .art-symbol,
+.detail .art-symbol { color: var(--offer-accent); }
+.art-label,
+.oil .art-label,
+.detail .art-label { color: #f5f5f6; }
+.art-line,
+.art-line::before,
+.art-line::after { border-color: #ffffff0d; }
+.offer-body h3, .point-price { color: var(--brand-graphite); }
+.offer-body > p, .point-price small { color: #6b6d72; }
+.offer-bottom { border-color: #eceef0; }
+.offer-body .button.secondary { color: #36383c; border-color: #d9dce0; background: #fafafa; }
+
+.rappel-card,
+.rappel-wide {
+  color: var(--brand-graphite);
+  background: linear-gradient(125deg, #fafafa, #eceef0);
+  border-color: #dfe1e4;
+  box-shadow: inset 3px 0 var(--red);
+}
+.rappel-title .small-icon { color: #474a50; background: #e2e4e7; }
+.rappel-title p, .rappel-wide p { color: #6b6d72; }
+.rappel-title > strong { color: #c5372b; }
+.rappel-bottom { color: #46494f; }
+.rappel-bottom > span > span { color: #75787e; }
+.rappel-wide .eyebrow { color: #696c72; }
+.rappel-wide .button.dark { background: var(--brand-graphite); }
+
+.progress { background: #dfe1e4; }
+.progress span { background: var(--red); }
+.progress.light { background: #44464c; }
+.progress.light span { background: #e35a4e; }
+.loyalty-card { background: linear-gradient(125deg, #252629, #17181a); box-shadow: 0 10px 23px #20212414; }
+.card-brand > span:last-child, .card-progress p { color: #c6c7cb; }
+.points-label, .points-value span { color: #b4b6bc; }
+.card-bottom > div > span { color: #a5a8af; }
+.member-pill { color: #c6c7cb; border-color: #ffffff30; }
+.stat-card { border-color: var(--brand-silver); }
+.stat-card .small-icon { color: #686c73; background: #eff0f2; }
+.stat-card .small-icon.red { color: #c5372b; background: #fbefed; }
+.stat-card p, .stat-card .text-button { color: #6b6d72; }
+
+/* Carry the same palette through benefit details and redemption dialogs. */
+.notice { color: #60646b; background: #f0f1f2; border-color: #dfe1e4; }
+.modal-symbol { color: #d94032; background: #f3f3f4; }
+.reward-price { color: var(--brand-graphite); }
+.reward-price span { color: #6b6d72; }
+.terms { background: #f0f1f2; }
+.terms p { color: #62666d; }
