@@ -16,6 +16,6 @@ test('Pages: recupera una descarga interrumpida en la misma pestaña y permite e
   const code = await page.locator('#demo-auth-code').textContent();
   await page.getByLabel('Código de prueba', { exact: true }).fill(code);
   await page.getByRole('button', { name: 'Confirmar código y entrar' }).click();
-  await expect(page.locator('.points-value')).toHaveText('65.000pts');
+  await expect(page.locator('.loyalty-card')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });

@@ -10,6 +10,12 @@ async function login(page, email = 'alex@example.com') {
   await confirmDemoCode(page);
 }
 
+async function expectBalance(page, points) {
+  await page.getByRole('button', { name: 'Beneficios', exact: true }).click();
+  await expect(page.getByText(`Tienes ${points} puntos para seguir cuidando tu vehículo.`, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Mi club', exact: true }).click();
+}
+
 test('cliente y negocio completan un canje y un servicio con persistencia', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
@@ -33,9 +39,9 @@ test('cliente y negocio completan un canje y un servicio con persistencia', asyn
   await page.getByLabel('Importe pagado').fill('25');
   await page.getByRole('button', { name: 'Registrar y sumar puntos' }).click();
   await page.getByRole('button', { name: 'Mi club', exact: true }).click();
-  await expect(page.locator('.points-value')).toContainText('50.000');
+  await expectBalance(page, '50.000');
   await page.reload();
-  await expect(page.locator('.points-value')).toContainText('50.000');
+  await expectBalance(page, '50.000');
   expect(errors).toEqual([]);
 });
 test('registro simulado, filtros y perfil sin inyección HTML', async ({ page }) => {
@@ -47,7 +53,7 @@ test('registro simulado, filtros y perfil sin inyección HTML', async ({ page })
   await confirmDemoCode(page);
   await expect(page.locator('h1')).toContainText('<b>Andrea</b>');
   await expect(page.locator('h1 b')).toHaveCount(0);
-  await expect(page.locator('.points-value')).toContainText('65.000');
+  await expectBalance(page, '65.000');
   await page.getByRole('button', { name: 'Mis servicios', exact: true }).click();
   await page.getByRole('button', { name: 'A domicilio', exact: true }).click();
   await expect(page.getByText('Todavía no hay servicios en esta categoría.')).toBeVisible();
@@ -55,6 +61,8 @@ test('registro simulado, filtros y perfil sin inyección HTML', async ({ page })
 test('QR de tarjeta real y QR de entrada validado', async ({ page }) => {
   await page.goto('/');
   await login(page);
+  await expect(page.locator('.member-stripes span')).toHaveCount(3);
+  await expect(page.locator('.loyalty-card .points-value')).toHaveCount(0);
   await page.getByRole('button', { name: 'Mi tarjeta', exact: true }).click();
   await expect(page.locator('#large-qr')).toBeVisible();
   expect(await page.locator('#large-qr').evaluate(c => new Set(c.getContext('2d').getImageData(0, 0, c.width, c.height).data).size)).toBeGreaterThan(1);
@@ -86,10 +94,10 @@ test('el QR exige acceso, una ruta directa no lo evita y cerrar sesión conserva
   await expect(page.getByRole('button', { name: 'Iniciar sesión', exact: true })).toBeVisible();
   await expect(page.locator('#service-form')).toHaveCount(0);
   await login(page);
-  await expect(page.locator('.points-value')).toContainText('65.000');
+  await expectBalance(page, '65.000');
   await expect(page.locator('.stat-number').first()).toHaveText('01');
   await page.reload();
-  await expect(page.locator('.points-value')).toContainText('65.000');
+  await expectBalance(page, '65.000');
   await page.getByRole('button', { name: 'Mi perfil', exact: true }).click();
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
   await page.goto('/#history');
@@ -135,24 +143,24 @@ test('registro de moto y detailing completo: importe, puntos, persistencia y res
     await page.getByLabel('Importe del primer servicio').fill(amount);
     await page.getByRole('button', { name: 'Crear cuenta de prueba' }).click();
     await confirmDemoCode(page);
-    await expect(page.locator('.points-value')).toHaveText(`${points}pts`);
+    await expectBalance(page, points);
     await expect(page.locator('.stat-number').first()).toHaveText('01');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await page.reload();
-    await expect(page.locator('.points-value')).toHaveText(`${points}pts`);
+    await expectBalance(page, points);
     await page.goto('/#admin');
     await expect(page.getByLabel('Puntos por $1')).toHaveValue('1000');
     await expect(page.getByLabel('Puntos por $1')).toHaveAttribute('readonly', '');
     await page.getByRole('button', { name: 'Restablecer demo', exact: true }).click();
     await page.getByRole('button', { name: 'Restablecer datos de demostración' }).click();
     await page.goto('/#home');
-    await expect(page.locator('.points-value')).toHaveText(`${points}pts`);
+    await expectBalance(page, points);
     await expect(page.locator('.service-info strong').last()).toHaveText(service);
     if (amount === '250') await page.screenshot({ path: 'test-results/pit-detail-250000-mobile.png', fullPage: true });
     await page.goto('/#profile');
     await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
     await login(page, email);
-    await expect(page.locator('.points-value')).toHaveText(`${points}pts`);
+    await expectBalance(page, points);
     await page.goto('/#profile');
     await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
   }
