@@ -9,8 +9,23 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
-    "test:pages": "PIT_BASE_PATH=/pit-detail-club/ npm run build && playwright test --config playwright.pages.config.js"
+    "test:pages": "PIT_BASE_PATH=/pit-detail-club/ npm run build && playwright test --config playwright.pages.config.js",
+    "build:customer": "vite build --mode connected",
+    "build:admin": "vite build --config admin/vite.config.js",
+    "build:mvp": "npm run build:customer && npm run build:admin",
+    "start:mvp": "node --experimental-sqlite server/start.js",
+    "admin:create": "node --experimental-sqlite server/create-admin.js",
+    "test:server": "node --experimental-sqlite --test server/tests/*.test.js",
+    "check:customer": "node scripts/check-customer-build.js",
+    "test:mvp": "npm run build:mvp && playwright test --config playwright.mvp.config.js",
+    "demo:prepare": "node --experimental-sqlite server/prepare-review.js",
+    "demo:mvp": "PIT_DB=.local/review.sqlite node --experimental-sqlite server/start.js"
   },
-  "dependencies": { "qrcode": "^1.5.4" },
-  "devDependencies": { "vite": "^6.4.1", "@playwright/test": "^1.55.0" }
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "vite": "^6.4.1",
+    "@playwright/test": "^1.55.0"
+  }
 }

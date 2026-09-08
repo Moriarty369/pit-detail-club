@@ -3,3 +3,10 @@ dist/
 test-results/
 playwright-report/
 .env*
+
+dist-customer/
+dist-admin/
+.local/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

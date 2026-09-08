@@ -17,32 +17,16 @@ async function expectBalance(page, points) {
   await page.getByRole('button', { name: 'Mi club', exact: true }).click();
 }
 
-test('cliente y negocio completan un canje y un servicio con persistencia', async ({ page }) => {
+test('el cliente no tiene rutas ni controles administrativos', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/');
-  await login(page);
-  await page.getByRole('button', { name: 'Panel del negocio' }).click();
-  await page.getByLabel('Importe pagado').fill('60');
-  await page.getByRole('button', { name: 'Registrar y sumar puntos' }).click();
-  await page.getByRole('button', { name: 'Mi club', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Hola, Alex.' })).toBeVisible();
-  await page.getByRole('button', { name: 'Canjear', exact: false }).click();
-  await page.getByRole('button', { name: 'Generar código de canje' }).click();
-  const code = await page.locator('.redemption-code').textContent();
-  await page.getByRole('button', { name: 'Probar validación en el negocio' }).click();
-  await page.getByLabel('He comprobado').check();
-  await page.getByRole('button', { name: 'Validar canje', exact: true }).click();
-  await expect(page.getByRole('status').last()).toContainText('Canje validado');
-  await page.getByLabel('Código de canje').fill(code);
-  await page.getByLabel('He comprobado').check();
-  await page.getByRole('button', { name: 'Validar canje', exact: true }).click();
-  await expect(page.getByRole('status').last()).toContainText('ya fue utilizado');
-  await page.getByLabel('Importe pagado').fill('25');
-  await page.getByRole('button', { name: 'Registrar y sumar puntos' }).click();
-  await page.getByRole('button', { name: 'Mi club', exact: true }).click();
-  await expectBalance(page, '50.000');
-  await page.reload();
-  await expectBalance(page, '50.000');
+  await page.goto('/#admin'); await login(page);
+  await expectBalance(page, '65.000');
+  await page.goto('/#admin');
+  await expect(page.locator('.loyalty-card')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Panel del negocio' })).toHaveCount(0);
+  await expect(page.locator('#service-form, #redeem-form, #rules-form')).toHaveCount(0);
+  await expect(page.locator('.nav-item')).toHaveCount(4);
+  await page.reload(); await expectBalance(page, '65.000');
   expect(errors).toEqual([]);
 });
 test('registro simulado, filtros y perfil sin inyección HTML', async ({ page }) => {
@@ -59,7 +43,7 @@ test('registro simulado, filtros y perfil sin inyección HTML', async ({ page })
   await page.getByRole('button', { name: 'A domicilio', exact: true }).click();
   await expect(page.getByText('Todavía no hay servicios en esta categoría.')).toBeVisible();
 });
-test('QR de tarjeta real y QR de entrada validado', async ({ page }) => {
+test('QR de identificación del cliente y franjas de marca', async ({ page }) => {
   await page.goto('/');
   await login(page);
   await expect(page.locator('.loyalty-card .card-top .member-stripes span')).toHaveCount(3);
@@ -69,14 +53,7 @@ test('QR de tarjeta real y QR de entrada validado', async ({ page }) => {
   await expect(page.locator('#large-qr')).toBeVisible();
   expect(await page.locator('#large-qr').evaluate(c => new Set(c.getContext('2d').getImageData(0, 0, c.width, c.height).data).size)).toBeGreaterThan(1);
   await page.getByRole('button', { name: 'Cerrar ventana' }).click();
-  await page.getByRole('button', { name: 'Panel del negocio' }).click();
-  await page.getByRole('button', { name: 'QR de acceso' }).click();
-  await page.getByLabel('URL accesible').fill('http://localhost:5173');
-  await page.getByRole('button', { name: 'Generar QR', exact: true }).click();
-  await expect(page.getByRole('status').last()).toContainText('localhost');
-  await page.getByLabel('URL accesible').fill('https://example.com');
-  await page.getByRole('button', { name: 'Generar QR', exact: true }).click();
-  await expect(page.locator('#entry-canvas')).toBeVisible();
+
 });
 test('pantallas móvil sin desbordamiento horizontal', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -125,45 +102,17 @@ test('pantallas de acceso y código son legibles en móvil', async ({ page }) =>
   await expect(page.getByRole('heading', { name: 'Hola, María.' })).toBeVisible();
 });
 
-test('registro de moto y detailing completo: importe, puntos, persistencia y reset en móvil', async ({ page }) => {
+test('registro del cliente no permite asignarse importes ni servicios', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
-  for (const [service, amount, points, email] of [
-    ['Lavado de moto', '5', '5.000', 'moto@example.com'],
-    ['Detailing integral', '250', '250.000', 'full@example.com'],
-  ]) {
-    await page.goto('/#login');
-    await page.getByRole('button', { name: 'Registrarse', exact: true }).click();
-    await page.getByLabel('Nombre', { exact: true }).fill('Cliente Demo');
-    await page.getByLabel('Correo electrónico').fill(email);
-    await page.getByLabel('Servicio realizado').selectOption(service);
-    await expect(page.getByLabel('Importe del primer servicio')).toHaveValue(amount);
-    await expect(page.locator('#first-points')).toHaveText(`Saldo inicial: ${points} puntos`);
-    await page.getByLabel('Importe del primer servicio').fill('4');
-    await expect(page.locator('#first-points')).toContainText('entre $5 y $250');
-    await page.getByRole('button', { name: 'Crear cuenta de prueba' }).click();
-    await expect(page.locator('#demo-auth-code')).toHaveCount(0);
-    await page.getByLabel('Importe del primer servicio').fill(amount);
-    await page.getByRole('button', { name: 'Crear cuenta de prueba' }).click();
-    await confirmDemoCode(page);
-    await expectBalance(page, points);
-    await expect(page.locator('.stat-number').first()).toHaveText('01');
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
-    await page.reload();
-    await expectBalance(page, points);
-    await page.goto('/#admin');
-    await expect(page.getByLabel('Puntos por $1')).toHaveValue('1000');
-    await expect(page.getByLabel('Puntos por $1')).toHaveAttribute('readonly', '');
-    await page.getByRole('button', { name: 'Restablecer demo', exact: true }).click();
-    await page.getByRole('button', { name: 'Restablecer datos de demostración' }).click();
-    await page.goto('/#home');
-    await expectBalance(page, points);
-    await expect(page.locator('.service-info strong').last()).toHaveText(service);
-    if (amount === '250') await page.screenshot({ path: 'test-results/pit-detail-250000-mobile.png', fullPage: true });
-    await page.goto('/#profile');
-    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
-    await login(page, email);
-    await expectBalance(page, points);
-    await page.goto('/#profile');
-    await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
-  }
+  await page.goto('/#login');
+  await page.getByRole('button', { name: 'Registrarse', exact: true }).click();
+  await expect(page.getByLabel('Servicio realizado')).toHaveCount(0);
+  await expect(page.getByLabel('Importe del primer servicio')).toHaveCount(0);
+  await page.getByLabel('Nombre', { exact: true }).fill('Cliente Demo');
+  await page.getByLabel('Correo electrónico').fill('cliente@example.com');
+  await page.getByRole('button', { name: 'Crear cuenta de prueba' }).click();
+  await confirmDemoCode(page);
+  await expectBalance(page, '65.000');
+  await page.reload(); await expectBalance(page, '65.000');
+  await expect(page.locator('.stat-number').first()).toHaveText('01');
 });

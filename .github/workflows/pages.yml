@@ -23,10 +23,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npm run test:server
+      - run: npm run build:mvp
       - name: Build for this repository
         env:
           PIT_BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build
+      - run: npm run check:customer
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

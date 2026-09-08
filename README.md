@@ -1,92 +1,117 @@
-# PIT DETAIL Club · demo funcional
+# PIT DETAIL Club
 
-Primera versión navegable para validar la fidelización antes de conectar cuentas reales.
+MVP de fidelización con dos aplicaciones independientes y una API con permisos en el servidor. El portal de clientes conserva el diseño de la beta; el panel del negocio tiene su propia entrada, compilación y dirección.
 
-Beta: https://moriarty369.github.io/pit-detail-club/
+| Rol | Operaciones |
+| --- | --- |
+| Cliente | Registrarse, iniciar sesión, consultar su tarjeta, saldo e historial, editar su perfil y solicitar códigos de beneficios. |
+| Administrador | Buscar clientes, registrar servicios, confirmar canjes, ajustar el rappel, consultar actividad y generar el QR de acceso al club. |
 
-Repositorio: https://github.com/Moriarty369/pit-detail-club Incluye diseño adaptable al móvil, referencia visual PIT DETAIL, tarjeta con QR, beneficios por puntos, rappel trimestral, historial, perfil, alta simulada y panel del negocio.
+Una cuenta de cliente no puede convertirse en administrador. No existe registro público de administradores. Conocer una URL o alterar la interfaz no concede permisos sobre la API.
 
-## Ejecutar
+## Qué está publicado
+
+[Beta pública para socios](https://moriarty369.github.io/pit-detail-club/): únicamente el portal de clientes en modo demostración. Alex (`alex@example.com`) y las nuevas cuentas ficticias empiezan con un servicio de $65 y 65.000 puntos. Se introduce el código de prueba mostrado en pantalla; no se envía correo ni se verifica identidad. Las cuentas solo se conservan en ese navegador y pueden ser alteradas por quien lo controla. No usar datos reales.
+
+La beta ya no contiene el panel administrativo ni controles para asignar servicios, sumar puntos o confirmar canjes. El registro tampoco permite al cliente elegir el importe de un servicio. La base de datos del MVP conectado es independiente de la demo: no se importan saldos del navegador como operaciones reales.
+
+El QR existente sigue apuntando a la misma URL pública y solicita acceso. El QR de la tarjeta identifica al cliente; no constituye una sesión ni permite autorizar operaciones.
+
+## Ejecutar el MVP conectado
+
+Requisito: Node 22.13 o posterior con `node:sqlite` y npm. Se mantiene `--experimental-sqlite` por compatibilidad con el Node 23.3 del entorno de desarrollo.
 
 ```sh
-cd pit-detail-club
-npm install
-npm run dev
+npm ci
+npm run build:mvp
 ```
 
-Abrir http://127.0.0.1:5173. Para compilar: `npm run build`. Para revisar la compilación: `npm run preview`.
+Crear un administrador con variables de entorno propias. La contraseña debe tener entre 12 y 128 caracteres; no guardar credenciales en Git. Este ejemplo pide la contraseña sin mostrarla ni escribirla en el historial (bash o zsh):
 
-Para probar desde otro dispositivo de confianza en la misma Wi-Fi, iniciar con `npm run dev -- --host 0.0.0.0` y abrir la dirección Network mostrada por Vite. El QR de acceso del panel acepta esa dirección o una URL pública donde se haya alojado la aplicación. Un QR de localhost no lleva del móvil al ordenador. No exponer el servidor de desarrollo a Internet.
+```sh
+export PIT_ADMIN_EMAIL='tu-correo@ejemplo.com'
+export PIT_ADMIN_NAME='Tu nombre'
+read -r -s PIT_ADMIN_PASSWORD
+export PIT_ADMIN_PASSWORD
+npm run admin:create
+unset PIT_ADMIN_PASSWORD
+npm run start:mvp
+```
 
-## Recorrido de prueba
+Direcciones locales:
 
-1. Al abrir la app o escanear el QR sin sesión, se muestra «Iniciar sesión / Registrarse». Los enlaces directos a pantallas interiores también muestran el acceso.
-2. Para explorar, introducir `alex@example.com` y confirmar el código de prueba que muestra la propia página. No se envía un correo ni se verifica su propiedad.
-3. También se puede registrar una cuenta ficticia con nombre y correo. En el registro se eligen el primer servicio y su importe entre $5 y $250: de 5.000 a 250.000 puntos. Los ejemplos seleccionables son moto ($5), detailing exterior ($65) e integral ($250); el importe es editable. Alex empieza con $65 y 65.000 puntos. El servicio se añade una sola vez al crear la cuenta.
-4. Desde el panel, registrar un servicio por $60 para llegar a 125.000 puntos. Canjear «Cuida tu motor» por 100.000 puntos y validar el código desde el panel: quedan 25.000. Un código repetido no se acepta.
-5. En Mi perfil, «Cerrar sesión» vuelve al acceso. Al entrar de nuevo, el historial y el saldo se conservan en este navegador y el primer servicio no se duplica.
-6. El código de acceso de prueba dura cinco minutos y se invalida tras cinco intentos erróneos. La sesión dura dos horas en la pestaña; recargar la conserva y cerrar sesión la elimina.
-7. Restablecer demo desde el panel reinicia únicamente la cuenta actual a su primer servicio de ejemplo, previa confirmación. Las demás cuentas se conservan.
+- Clientes: http://127.0.0.1:3001
+- Administración: http://127.0.0.1:3002
 
-## Acceso desde el móvil
+Registrarse en el portal de clientes crea una cuenta con saldo cero. Desde administración, buscar el correo, abrir el cliente y registrar su primer servicio. Por ejemplo, un lavado de moto de $5 suma 5.000 puntos; un detailing de $250 suma 250.000. El importe lo introduce exclusivamente el administrador. El cliente ve el saldo actualizado al recargar y mediante comprobaciones periódicas cuando no está editando un formulario.
 
-El enlace público abre el mismo acceso que el QR; no hace falta otro dispositivo para escanear. Si una descarga falla, la página conserva el logo, una explicación y «Volver a intentar». El reintento pide de nuevo el documento con un parámetro de actualización, conserva la ruta y no borra cuentas del navegador. La pantalla de recuperación forma parte del HTML y permanece disponible aunque no llegue a ejecutarse el módulo principal.
+El cliente solicita un código de beneficio. El administrador comprueba sus condiciones y lo confirma desde su portal. Los puntos se descuentan al confirmar; solicitar un código no los descuenta. El registro del servicio usa una referencia para que reenviar la misma solicitud no duplique los puntos.
 
-Si Safari u otro navegador deniega el acceso o la escritura en el almacenamiento local o de sesión, la demo permite explorar usando memoria temporal. Un aviso visible en el acceso y dentro del club explica que las cuentas y cambios de esa prueba se pierden al recargar o cerrar. Las cuentas previamente guardadas no se eliminan. Cuando el almacenamiento funciona, la persistencia habitual se mantiene. Las fuentes externas se cargan sin bloquear el acceso; si no responden, se utiliza la tipografía del sistema.
+SQLite conserva cuentas, sesiones, servicios, canjes, reglas y actividad en `.local/pit-detail.sqlite`. Para elegir otro archivo, definir `PIT_DB` tanto al crear el administrador como al iniciar el servidor. El directorio `.local`, bases de datos y archivos `.env` están excluidos de Git. No publicar esos archivos.
 
-## Reglas provisionales
+### Prueba local con datos ficticios
 
-- Moneda de demostración USD. No hay conversión a bolívares ni integración de cobros.
-- 1.000 puntos por $1 elegible (tasa fija); cada céntimo suma 10 puntos. Excluir desplazamiento del importe introducido.
-- Ofertas por 100.000, 150.000 y 250.000 puntos con condiciones visibles antes de solicitar el código.
-- Rappel: al llegar a $250 en el trimestre, desbloquear 5% sobre mano de obra de un próximo servicio. Un canje por trimestre, sin acumulación con otras promociones. Se calcula con zona `America/Caracas`.
-- Códigos válidos cinco minutos. Se revalidan saldo/umbral y estado al consumirlos. Los ajustes de reglas se bloquean mientras haya códigos vigentes. Los ajustes del rappel no modifican puntos históricos.
+```sh
+npm run demo:prepare
+npm run demo:mvp
+```
 
-Las cuentas existentes se migran una sola vez a la versión 2: los puntos ya ganados y los costes de canjes pendientes y usados se multiplican por 100, manteniendo el valor de las ofertas. Se respetan las bonificaciones históricas si se había personalizado la tasa anterior; los nuevos servicios siempre suman 1.000/$. Se conservan identificadores, fechas, importes y estado de los canjes. Restablecer mantiene el importe y fecha del primer servicio elegido.
+Genera una base separada `.local/review.sqlite`, dos cuentas con contraseñas aleatorias y el archivo privado `.local/review-access.txt` con las credenciales. El cliente de ejemplo tiene su primer servicio de $65 registrado por el administrador. Ejecutarlo de nuevo conserva la base y las cuentas existentes. Nunca emplear esta base para el negocio real.
 
-Las condiciones son hipótesis de producto para probar el recorrido, no tarifas o promociones comerciales aprobadas. El panel registra que el empleado ha revisado las condiciones; no calcula facturas ni aplica automáticamente descuentos a una orden.
+## Separación y futuro despliegue en intranet
 
-## Límite de esta versión
+| Pieza | Código | Compilación | Puerto local |
+| --- | --- | --- | --- |
+| Portal QR de clientes | `src/main.js`, `src/customer-portal.js` | `dist-customer` | 3001 |
+| Administración | `admin/` | `dist-admin` | 3002 |
+| API y persistencia | `server/` | Node, no es un sitio estático | Dos listeners con rutas y sesiones distintas |
+| Demo pública aislada | Adaptador de demostración | `dist` | GitHub Pages |
 
-**Es una demo local, no un sistema seguro para clientes reales.** Las cuentas de prueba viven en `localStorage` y la sesión de la pestaña en `sessionStorage`. Ambos pueden modificarse desde el navegador y no constituyen autenticación real. La interfaz exige pasar por el acceso, pero cualquier persona con control del navegador puede alterar la demo. El registro no verifica el correo, los códigos se muestran en pantalla y no hay contraseñas. El panel de operaciones está disponible para cualquier cuenta de prueba tras entrar; todavía no hay roles de personal. Los datos no se comparten entre dispositivos. Los datos de la demo anterior se conservan en su clave original, sin borrarlos ni asignarlos automáticamente a las nuevas cuentas. El QR de tarjeta solo contiene un identificador ficticio; no autentica. No hay reservas, notificaciones, cobros ni aplicación de cambios a sistemas externos.
+La API de clientes solo expone su cuenta autenticada mediante `/api/me`; no acepta identificadores ajenos para consultar perfiles. Las rutas administrativas solo existen en el listener administrativo y exigen el rol `admin`. Cada portal usa su propia cookie de sesión.
 
-Para un piloto real: conectar base de datos y autenticación con verificación, autorización por usuario y rol en el servidor, MFA de administradores, registro de eventos y transacciones atómicas con idempotencia, devoluciones/anulaciones, recuperación de cuenta, límites de solicitudes, términos definitivos y despliegue HTTPS. Revalidar los flujos con concurrencia real antes de incorporar clientes.
+Para la futura intranet, el proxy público debe dirigirse exclusivamente al listener de clientes. El listener administrativo y `dist-admin` deben quedar en la red privada/VPN, con su proxy HTTPS propio. Ambos acceden al mismo servidor de aplicación y base de datos; no se debe copiar SQLite a dos máquinas y esperar sincronización. Se puede iniciar un único listener con `PIT_APP=customer` o `PIT_APP=admin`; dos procesos en el mismo host pueden usar el mismo archivo SQLite. No colocar SQLite en un sistema de archivos de red.
 
-La imagen del logo es la referencia JPEG recuperada. Aparece en la navegación de escritorio, la cabecera móvil, la tarjeta de cliente, su ventana QR y el perfil. El encuadre CSS reduce los márgenes negros conservando la imagen y sus proporciones. Los dibujos de las ofertas son ilustraciones SVG del prototipo. No se han usado fotografías de trabajos de Instagram. Las fuentes DM Sans y Barlow Condensed se cargan desde Google Fonts con alternativas del sistema.
+Configuración disponible: `PIT_DB`, `PIT_APP` (`all`, `customer`, `admin`), `PIT_CUSTOMER_HOST`, `PIT_ADMIN_HOST`, `PIT_CUSTOMER_PORT`, `PIT_ADMIN_PORT`, `PIT_CUSTOMER_ORIGIN` y `PIT_ADMIN_ORIGIN`. Por defecto, ambos listeners solo escuchan en `127.0.0.1`. En producción, usar `NODE_ENV=production` y orígenes HTTPS exactos. El proxy debe preservar `Origin`; la API exige origen permitido y una cabecera propia para las mutaciones. No existe CORS abierto. Los límites por dirección usan la IP del socket; detrás de un proxy se comparten, por lo que deben configurarse también límites en el proxy antes del piloto.
 
-## Comprobaciones
+GitHub Pages publica archivos estáticos. La versión conectada necesita alojamiento para Node y almacenamiento persistente; todavía no se ha desplegado una API pública ni una intranet. El workflow compila ambas aplicaciones, comprueba que los paquetes de clientes no incluyen operaciones administrativas y publica **solo `dist`**. `dist-admin`, `dist-customer` y `server/` no se suben al sitio Pages.
+
+El código fuente está en un repositorio público. La separación protege datos y operaciones mediante permisos de servidor, no mediante secreto del código.
+
+## Reglas actuales
+
+- USD, sin conversión a bolívares ni integración de cobros.
+- 1.000 puntos por $1 elegible; cada céntimo suma 10 puntos. Registrar importes de $5 a $250, sin desplazamiento.
+- Ofertas por 100.000, 150.000 y 250.000 puntos, con condiciones visibles.
+- Rappel inicial: $250 en el trimestre desbloquean 5% sobre mano de obra de un próximo servicio, una vez por trimestre. Zona `America/Caracas`.
+- Códigos de cinco minutos. Se revalidan el saldo, las condiciones y el estado al confirmarlos. Las reglas globales no se pueden cambiar mientras existan códigos vigentes.
+- El historial de actividad identifica al actor de servicios, canjes y cambios de reglas. No se permite borrar o editar servicios desde la UI.
+
+Las promociones siguen siendo hipótesis de producto, pendientes de aprobación comercial. El sistema registra la comprobación del administrador; no aplica descuentos a una factura.
+
+## Estado del acceso y próximos incrementos
+
+El MVP conectado guarda hashes scrypt con sal aleatoria; no guarda contraseñas en el navegador. Las sesiones son tokens aleatorios almacenados como hashes en el servidor, duran dos horas y se revocan al cerrar sesión. Las cookies son `HttpOnly`, `SameSite=Strict` y `Secure` en producción. Hay límites de intentos, validación de campos, autorización por rol y transacciones SQLite para modificar servicios y canjes.
+
+Antes de incorporar clientes reales quedan: verificación de correo y recuperación de cuenta, MFA de administradores, anulaciones/devoluciones auditadas, copias de seguridad y prueba de restauración, condiciones comerciales y de privacidad, configuración del alojamiento HTTPS y pruebas de carga. El registro actual autentica por contraseña, pero todavía no demuestra la propiedad del correo.
+
+Referencias de las decisiones de implementación: [SQLite en Node](https://nodejs.org/api/sqlite.html), [almacenamiento de contraseñas](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html), [sesiones](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) y [protección CSRF](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
+
+## Verificación
 
 ```sh
 npm test
+npm run test:server
+npm run build:mvp
 npm run build
-PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npx playwright install chromium webkit
-PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npm run test:e2e
-PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npm run test:pages
+npm run check:customer
+npx playwright install chromium webkit
+npm run test:e2e
+npm run test:mvp
+npm run test:pages
 ```
 
-Pruebas de negocio: puntos, duplicados, saldo insuficiente, expiración, canjes, límites de trimestre y cambios de reglas. Pruebas de navegador en Chromium y WebKit: recuperación ante descargas interrumpidas, almacenamiento bloqueado y JavaScript desactivado; acceso obligatorio en la interfaz, registro, cierre de sesión, primer servicio sin duplicados, recorrido de canje y servicio, persistencia, escape de HTML, generación de QR y ausencia de desbordamiento en móvil. La simulación de acceso se prueba también con caducidad, intentos fallidos y separación de cuentas.
+Las pruebas cubren reglas de puntos y canjes, sesiones, acceso entre roles, intentos de asignarse puntos o leer otra cuenta, CSRF, solicitudes repetidas, persistencia SQLite, errores internos y el recorrido real cliente/administrador en Chromium y WebKit. La demo mantiene comprobaciones móviles, recuperación de descargas, almacenamiento bloqueado y acceso con el prefijo de GitHub Pages.
 
-Se utiliza [Vite 6](https://v6.vite.dev/guide/) por compatibilidad con el Node 20.10 disponible y [node-qrcode](https://github.com/soldair/node-qrcode) para generar QR reales. Dependencias fijadas en `package-lock.json`.
+En este equipo, los navegadores están en `/private/tmp/pit-detail-browsers`: anteponer `PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers` a los comandos de Playwright.
 
-## Beta compartida y repositorio
-
-Ramas: `main` (versión publicable), `develop` (integración) y `beta/colaboracion` (trabajo de la beta). Las próximas mejoras parten de `develop` en una rama nueva. El repositorio público está en GitHub (`github`) y la beta se publica con GitHub Pages. La primera copia remota de Sites se conserva en `origin`.
-
-`.github/workflows/pages.yml` ejecuta las pruebas y publica en Pages al recibir cambios en `main`. `develop` y las ramas de trabajo no publican automáticamente. Vite recibe `PIT_BASE_PATH=/<nombre-del-repositorio>/` en el workflow. Para probar esa compilación localmente:
-
-```sh
-PIT_BASE_PATH=/pit-detail-club/ npm run build
-PIT_BASE_PATH=/pit-detail-club/ npm run preview
-```
-
-Abrir http://127.0.0.1:4173/pit-detail-club/. El nombre del repositorio en el workflow se obtiene automáticamente del evento de GitHub.
-
-Una vez verificada la URL pública, `node scripts/share-qr.js https://URL-PUBLICA/ ../compartir` genera PNG y SVG del QR y un texto para compartir. No generar el QR final antes de comprobar que la publicación responde.
-
-«Aportar idea» prepara un comentario que el socio puede copiar y enviar al grupo por su cuenta. No se reciben ni almacenan comentarios en un servidor. Cada dispositivo mantiene su propia demo.
-
-El acceso a la beta es público. `noindex` y `robots.txt` solicitan que no se indexe, pero no son control de acceso. No introducir datos reales. Esta beta no cobra, no recibe reservas y no permite canjes comerciales reales.
-
-GitHub Pages permite alojamiento de proyectos en repositorios públicos con GitHub Free. Esta publicación es una demostración para validar ideas; el sistema comercial definitivo requerirá un alojamiento y un backend apropiados. Documentación: https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages
-
-El intento inicial en Sites conserva su identificador en `.openai/hosting.json`, su remoto y la versión guardada. Falló al publicar por un error interno 409 de callbacks. No se debe crear otro Site para este mismo proyecto. `scripts/package-site.py` permite empaquetar la compilación estática para retomar ese alojamiento; para ello compilar con la base predeterminada `/`.
+Ramas: `main` para publicación y `develop` para integración. Esta separación se desarrolla en `feat/separate-customer-admin`. El remoto `github` es el repositorio compartido; `origin` conserva la copia anterior de Sites. El despliegue de Pages puede ejecutarse manualmente con el workflow `pages.yml`.
