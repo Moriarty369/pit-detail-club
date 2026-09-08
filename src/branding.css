@@ -1,0 +1,191 @@
+/* Display the supplied logo at its original proportions. The frame excludes
+   the surrounding black margin without changing the source image. */
+.brand-image {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1.25;
+  background: #000;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.brand-image img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  max-width: none;
+  height: auto;
+  transform: translate(-50%, -50%);
+}
+
+.brand-home {
+  display: block;
+  text-decoration: none;
+  text-align: center;
+}
+
+.brand-home .brand-image {
+  width: 100%;
+  max-width: 192px;
+  margin: 0 auto;
+}
+
+.brand-club {
+  display: block;
+  margin-top: 13px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #b8b8b8;
+}
+
+.sidebar {
+  padding-top: 24px;
+  background: #000;
+  border-color: #242424;
+  color: #f5f5f5;
+}
+
+.sidebar .nav-item {
+  color: #aaa;
+}
+
+.sidebar .nav-item:hover {
+  background: #181818;
+  color: #fff;
+}
+
+.sidebar .nav-item.active {
+  background: #202020;
+  color: #fff;
+}
+
+.sidebar .nav-item.active .icon,
+.sidebar .nav-item.active span {
+  color: #ff6b5e;
+}
+
+.sidebar .nav-item.active i {
+  background: #ff6b5e;
+}
+
+.sidebar .sidebar-label,
+.sidebar .mini-brand p,
+.sidebar .demo-label {
+  color: #a3a3a3;
+}
+
+.sidebar .mini-brand strong {
+  color: #e5e5e5;
+}
+
+.sidebar .demo-label {
+  border-color: #292929;
+}
+
+.sidebar-label {
+  margin: 14px 0 25px;
+  text-align: center;
+  font-size: 7px;
+  letter-spacing: 1px;
+}
+
+.mobile-brand {
+  display: none;
+}
+
+.card-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: 'DM Sans', Arial, sans-serif;
+  font-style: normal;
+}
+
+.card-brand .brand-image {
+  width: 106px;
+  border: 1px solid #ffffff15;
+  border-radius: 6px;
+}
+
+.card-brand > span:last-child {
+  font-size: 8px;
+  font-weight: 400;
+  line-height: 1.9;
+  letter-spacing: 2px;
+  color: #bec6b5;
+}
+
+.modal-brand {
+  width: 154px;
+  margin: 0 auto 20px;
+}
+
+@media (max-width: 1150px) {
+  .card-brand {
+    gap: 10px;
+  }
+
+  .card-brand .brand-image {
+    width: 90px;
+  }
+
+  .card-brand > span:last-child {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+}
+
+@media (max-height: 740px) and (min-width: 641px) {
+  .brand-home .brand-image {
+    max-width: 142px;
+  }
+
+  .mini-brand {
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    padding-top: 5px;
+  }
+
+  .brand-home {
+    display: none;
+  }
+
+  .topbar {
+    height: 88px;
+  }
+
+  .topbar .breadcrumb {
+    display: none;
+  }
+
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+
+  .mobile-brand .brand-image {
+    width: 85px;
+    border-radius: 5px;
+  }
+
+  .mobile-brand > span:last-child {
+    font-size: 9px;
+    letter-spacing: 2px;
+    font-weight: 500;
+    color: #69725e;
+  }
+
+  .card-brand .brand-image {
+    width: 96px;
+  }
+}
