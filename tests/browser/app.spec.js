@@ -11,6 +11,7 @@ async function login(page, email = 'alex@example.com') {
 }
 
 async function expectBalance(page, points) {
+  await expect(page.locator('.loyalty-card .points-value')).toHaveText(`${points}pts`);
   await page.getByRole('button', { name: 'Beneficios', exact: true }).click();
   await expect(page.getByText(`Tienes ${points} puntos para seguir cuidando tu vehículo.`, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Mi club', exact: true }).click();
@@ -61,8 +62,9 @@ test('registro simulado, filtros y perfil sin inyección HTML', async ({ page })
 test('QR de tarjeta real y QR de entrada validado', async ({ page }) => {
   await page.goto('/');
   await login(page);
-  await expect(page.locator('.member-stripes span')).toHaveCount(3);
-  await expect(page.locator('.loyalty-card .points-value')).toHaveCount(0);
+  await expect(page.locator('.loyalty-card .card-top .member-stripes span')).toHaveCount(3);
+  await expect(page.locator('.loyalty-card img')).toHaveCount(0);
+  await expect(page.locator('.loyalty-card .points-value')).toHaveText('65.000pts');
   await page.getByRole('button', { name: 'Mi tarjeta', exact: true }).click();
   await expect(page.locator('#large-qr')).toBeVisible();
   expect(await page.locator('#large-qr').evaluate(c => new Set(c.getContext('2d').getImageData(0, 0, c.width, c.height).data).size)).toBeGreaterThan(1);

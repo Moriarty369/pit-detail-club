@@ -56,7 +56,8 @@
 .progress.light { background: #44464c; }
 .progress.light span { background: #e35a4e; }
 .loyalty-card { background: linear-gradient(125deg, #252629, #17181a); box-shadow: 0 10px 23px #20212414; }
-.card-brand > span:last-child { color: #c6c7cb; }
+.card-brand > span:last-child, .card-progress p { color: #c6c7cb; }
+.points-label, .points-value span { color: #b4b6bc; }
 .card-bottom > div > span { color: #a5a8af; }
 .member-pill { color: #c6c7cb; border-color: #ffffff30; }
 .stat-card { border-color: var(--brand-silver); }
@@ -72,21 +73,16 @@
 .terms { background: #f0f1f2; }
 .terms p { color: #62666d; }
 
-/* The member card uses the three racing stripes from the logo. */
-.loyalty-card { display: flex; flex-direction: column; }
+/* The main card replaces its logo image with the three brand stripes. */
 .member-stripes {
   display: flex;
-  gap: 12px;
-  width: 176px;
-  max-width: 60%;
-  height: 74px;
+  gap: 6px;
+  width: 88px;
+  height: 44px;
   flex-shrink: 0;
-  margin: 24px 0 14px 14px;
+  margin: 0 8px;
   transform: skewX(-20deg);
-  position: relative;
-  z-index: 1;
 }
 .member-stripes span { flex: 1; background: var(--brand-gold); }
 .member-stripes span:nth-child(2) { background: var(--red); }
 .member-stripes span:nth-child(3) { background: var(--brand-blue); }
-.loyalty-card .card-bottom { margin-top: auto; padding-top: 12px; }
