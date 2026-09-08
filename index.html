@@ -10,7 +10,7 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&amp;family=DM+Sans:wght@400;450;500;550;600;650;700&amp;display=swap" media="print" onload="this.media='all'" />
     <style>
-      /* Shared by the loading screen and app, without an external asset. */
+      /* Shared by the loading screen and app. The tread is decorative only. */
       body {
         margin: 0;
         min-height: 100vh;
@@ -18,7 +18,7 @@
         background-image:
           radial-gradient(ellipse 850px 520px at 100% 0%, rgba(116, 161, 145, .28), transparent 72%),
           radial-gradient(ellipse 700px 600px at 0% 100%, rgba(136, 160, 181, .22), transparent 70%),
-          repeating-linear-gradient(125deg, rgba(63, 89, 75, .035) 0 1px, transparent 1px 22px),
+          url('/tire-tread.svg'),
           linear-gradient(135deg, #f4f6f2 0%, #edf1ec 50%, #e5ece7 100%);
       }
       body.booting::after, body.booting #app { display: none; }
