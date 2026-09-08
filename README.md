@@ -1,6 +1,10 @@
 # PIT DETAIL Club · demo funcional
 
-Primera versión navegable para validar la fidelización antes de conectar cuentas reales. Incluye diseño adaptable al móvil, referencia visual PIT DETAIL, tarjeta con QR, beneficios por puntos, rappel trimestral, historial, perfil, alta simulada y panel del negocio.
+Primera versión navegable para validar la fidelización antes de conectar cuentas reales.
+
+Beta: https://moriarty369.github.io/pit-detail-club/
+
+Repositorio: https://github.com/Moriarty369/pit-detail-club Incluye diseño adaptable al móvil, referencia visual PIT DETAIL, tarjeta con QR, beneficios por puntos, rappel trimestral, historial, perfil, alta simulada y panel del negocio.
 
 ## Ejecutar
 
@@ -57,7 +61,7 @@ Se utiliza [Vite 6](https://v6.vite.dev/guide/) por compatibilidad con el Node 2
 
 ## Beta compartida y repositorio
 
-Ramas: `main` (versión publicable), `develop` (integración) y `beta/colaboracion` (trabajo de la beta). Las próximas mejoras parten de `develop` en una rama nueva. La primera copia remota está en ChatGPT Sites (`origin`); el destino preparado para publicar es GitHub Pages, mediante el remoto `github` cuando se complete la autenticación.
+Ramas: `main` (versión publicable), `develop` (integración) y `beta/colaboracion` (trabajo de la beta). Las próximas mejoras parten de `develop` en una rama nueva. El repositorio público está en GitHub (`github`) y la beta se publica con GitHub Pages. La primera copia remota de Sites se conserva en `origin`.
 
 `.github/workflows/pages.yml` ejecuta las pruebas y publica en Pages al recibir cambios en `main`. `develop` y las ramas de trabajo no publican automáticamente. Vite recibe `PIT_BASE_PATH=/<nombre-del-repositorio>/` en el workflow. Para probar esa compilación localmente:
 
