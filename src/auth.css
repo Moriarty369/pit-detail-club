@@ -36,3 +36,5 @@
 .first-service-fields legend { padding: 0 6px; font-size: 12px; font-weight: 600; color: #4b6037; }
 .first-service-fields .small-note { margin: 0; }
 #first-points { font-size: 14px; font-weight: 600; color: #385025; }
+
+.storage-notice { padding: 12px 14px; margin: 0 0 20px; background: #fff1ce; border: 1px solid #e9d28e; border-radius: 8px; color: #715314; font-size: 12px; line-height: 1.6; }

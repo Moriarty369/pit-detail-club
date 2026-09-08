@@ -28,6 +28,12 @@ Para probar desde otro dispositivo de confianza en la misma Wi-Fi, iniciar con `
 6. El código de acceso de prueba dura cinco minutos y se invalida tras cinco intentos erróneos. La sesión dura dos horas en la pestaña; recargar la conserva y cerrar sesión la elimina.
 7. Restablecer demo desde el panel reinicia únicamente la cuenta actual a su primer servicio de ejemplo, previa confirmación. Las demás cuentas se conservan.
 
+## Acceso desde el móvil
+
+El enlace público abre el mismo acceso que el QR; no hace falta otro dispositivo para escanear. Si una descarga falla, la página conserva el logo, una explicación y «Volver a intentar». El reintento pide de nuevo el documento con un parámetro de actualización, conserva la ruta y no borra cuentas del navegador. La pantalla de recuperación forma parte del HTML y permanece disponible aunque no llegue a ejecutarse el módulo principal.
+
+Si Safari u otro navegador deniega el acceso o la escritura en el almacenamiento local o de sesión, la demo permite explorar usando memoria temporal. Un aviso visible en el acceso y dentro del club explica que las cuentas y cambios de esa prueba se pierden al recargar o cerrar. Las cuentas previamente guardadas no se eliminan. Cuando el almacenamiento funciona, la persistencia habitual se mantiene. Las fuentes externas se cargan sin bloquear el acceso; si no responden, se utiliza la tipografía del sistema.
+
 ## Reglas provisionales
 
 - Moneda de demostración USD. No hay conversión a bolívares ni integración de cobros.
@@ -53,11 +59,12 @@ La imagen del logo es la referencia JPEG recuperada. Aparece en la navegación d
 ```sh
 npm test
 npm run build
-PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npx playwright install chromium
+PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npx playwright install chromium webkit
 PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npm run test:e2e
+PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npm run test:pages
 ```
 
-Pruebas de negocio: puntos, duplicados, saldo insuficiente, expiración, canjes, límites de trimestre y cambios de reglas. Pruebas de navegador: acceso obligatorio en la interfaz, registro, cierre de sesión, primer servicio sin duplicados, recorrido de canje y servicio, persistencia, escape de HTML, generación de QR y ausencia de desbordamiento en móvil. La simulación de acceso se prueba también con caducidad, intentos fallidos y separación de cuentas.
+Pruebas de negocio: puntos, duplicados, saldo insuficiente, expiración, canjes, límites de trimestre y cambios de reglas. Pruebas de navegador en Chromium y WebKit: recuperación ante descargas interrumpidas, almacenamiento bloqueado y JavaScript desactivado; acceso obligatorio en la interfaz, registro, cierre de sesión, primer servicio sin duplicados, recorrido de canje y servicio, persistencia, escape de HTML, generación de QR y ausencia de desbordamiento en móvil. La simulación de acceso se prueba también con caducidad, intentos fallidos y separación de cuentas.
 
 Se utiliza [Vite 6](https://v6.vite.dev/guide/) por compatibilidad con el Node 20.10 disponible y [node-qrcode](https://github.com/soldair/node-qrcode) para generar QR reales. Dependencias fijadas en `package-lock.json`.
 

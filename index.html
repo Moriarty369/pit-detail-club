@@ -8,11 +8,57 @@
     <title>PIT DETAIL Club · Beta para socios</title>
     <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&amp;family=DM+Sans:wght@400;450;500;550;600;650;700&amp;display=swap" media="print" onload="this.media='all'" />
+    <style>
+      body.booting { margin: 0; background: #f6f7f1; }
+      body.booting::after, body.booting #app { display: none; }
+      #boot-screen { box-sizing: border-box; min-height: 100vh; padding: 48px 24px; display: flex; align-items: center; justify-content: center; font: 16px/1.6 Arial, sans-serif; color: #242824; }
+      #boot-screen[hidden] { display: none; }
+      #boot-screen .boot-card { width: 100%; max-width: 390px; text-align: center; }
+      #boot-screen img { width: 220px; max-width: 100%; height: auto; border-radius: 12px; }
+      #boot-screen h1 { font: bold 28px/1.2 Arial, sans-serif; margin: 24px 0 16px; letter-spacing: -0.5px; }
+      #boot-screen p { margin: 16px 0; }
+      #boot-screen a { display: inline-block; padding: 12px 22px; border-radius: 8px; background: #db4235; color: white; text-decoration: none; font-weight: bold; }
+      #boot-screen .boot-help { color: #5d6659; font-size: 14px; }
+    </style>
   </head>
-  <body>
+  <body class="booting">
+    <section id="boot-screen" aria-labelledby="boot-title">
+      <div class="boot-card">
+        <img src="/pit-detail.jpg" alt="PIT DETAIL" width="1200" height="630" />
+        <h1 id="boot-title">Abriendo tu club…</h1>
+        <p id="boot-message" role="status">El acceso aparecerá en unos segundos. Puedes entrar directamente desde este enlace, sin escanear el QR.</p>
+        <a id="boot-retry" href="?abrir=1#login">Volver a intentar</a>
+        <p class="boot-help">Si no carga, comprueba tu conexión. Si abriste el enlace desde WhatsApp, ábrelo en Safari o Chrome.</p>
+        <p id="boot-js-required">Activa JavaScript en tu navegador para abrir la beta.</p>
+      </div>
+    </section>
     <div id="app"></div>
     <dialog id="modal" aria-labelledby="modal-title"></dialog>
     <div id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="/src/main.js"></script>
+    <script>
+      (function () {
+        var screen = document.getElementById('boot-screen');
+        document.getElementById('boot-js-required').remove();
+        var timer;
+        function failed() {
+          if (screen.hidden) return;
+          document.getElementById('boot-title').textContent = 'No se pudo abrir el club.';
+          document.getElementById('boot-message').textContent = 'La carga se ha interrumpido o está tardando demasiado. Pulsa «Volver a intentar» para solicitar la versión actualizada. Tus datos guardados no se borrarán.';
+        }
+        window.pitBoot = {
+          ready: function () { clearTimeout(timer); screen.hidden = true; screen.remove(); document.body.classList.remove('booting'); },
+          failed: function () { clearTimeout(timer); failed(); }
+        };
+        document.getElementById('boot-retry').addEventListener('click', function (event) {
+          event.preventDefault();
+          var url = new URL(window.location.href);
+          url.searchParams.set('abrir', Date.now().toString());
+          window.location.replace(url.href);
+        });
+        timer = setTimeout(failed, 10000);
+      }());
+    </script>
+    <script type="module" src="/src/boot.js"></script>
   </body>
 </html>
