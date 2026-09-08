@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs>
-    <!-- The matrix keeps the diagonal tread seamless across 512 px tiles. -->
-    <pattern id="tread" width="256" height="32" patternUnits="userSpaceOnUse" patternTransform="matrix(1 1 -1 1 0 0)">
-      <path fill="#3f594b" fill-opacity=".055" d="M96 2h10v13H96z M96 19h10v11H96z M110 2l16 9v13l-16-9z M130 11l16-9v13l-16 9z M150 2h10v13h-10z M150 19h10v11h-10z"/>
-    </pattern>
-  </defs>
-  <path fill="url(#tread)" d="M0 0h512v512H0z"/>
-</svg>
