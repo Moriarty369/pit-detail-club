@@ -1,24 +1,9 @@
-.beta-banner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: -10px 0 26px;
-  padding: 12px 15px;
-  border: 1px solid #e3dfd2;
-  border-radius: 7px;
-  background: #f1eee5;
-  color: #746d57;
-  font-size: 11px;
-  line-height: 1.5;
-}
-.beta-banner strong { font-size: 8px; letter-spacing: 1px; white-space: nowrap; }
 .feedback-button { display: flex; align-items: center; gap: 7px; border: 1px solid #dedfd5; background: transparent; border-radius: 5px; padding: 8px 10px; font-size: 11px; }
 .feedback-button .icon { width: 15px; height: 15px; }
 textarea { font: inherit; width: 100%; min-width: 0; padding: 12px; border: 1px solid #dce1d4; border-radius: 5px; background: #fcfcf9; color: #384230; font-size: 13px; line-height: 1.6; resize: vertical; }
 textarea:focus-visible { outline: 3px solid #478ec0; outline-offset: 4px; }
 .feedback-result { margin-top: 25px; }
 @media (max-width: 640px) {
-  .beta-banner { align-items: flex-start; flex-direction: column; gap: 4px; margin-top: -8px; font-size: 10px; }
   .feedback-button { padding: 8px; }
   .feedback-button span { display: none; }
   .topbar-right { gap: 7px; }
