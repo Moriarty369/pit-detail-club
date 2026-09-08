@@ -1,4 +1,4 @@
-import { createMemberState } from './domain.js';
+import { createMemberState, migrateState } from './domain.js';
 
 // UI demonstration only: this adapter does not establish a verified identity.
 // It must be replaced by server-backed authentication before handling real data.
@@ -10,7 +10,9 @@ export function createDemoAuth({ storage, session, now = () => Date.now() }) {
   function accounts() {
     const value = JSON.parse(storage.getItem(ACCOUNT_KEY) || '[]');
     if (!Array.isArray(value)) throw new Error('No se pudieron leer las cuentas de prueba de este navegador.');
-    return value;
+    const upgraded = value.map(migrateState);
+    if (upgraded.some((member, index) => member !== value[index])) storage.setItem(ACCOUNT_KEY, JSON.stringify(upgraded));
+    return upgraded;
   }
   function current() {
     try {
@@ -19,7 +21,7 @@ export function createDemoAuth({ storage, session, now = () => Date.now() }) {
       return accounts().find(value => value.customer.id === active.id) || null;
     } catch { return null; }
   }
-  function request({ mode, email, name, marketing = false }) {
+  function request({ mode, email, name, marketing = false, firstService }) {
     pending = null;
     email = normalize(email);
     if (!['login', 'register'].includes(mode) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 120) throw new Error('Escribe un correo de prueba válido.');
@@ -29,7 +31,7 @@ export function createDemoAuth({ storage, session, now = () => Date.now() }) {
       name = String(name || '').trim();
       if (name.length < 2 || name.length > 70) throw new Error('Escribe un nombre de entre 2 y 70 caracteres.');
       if (member || email === 'alex@example.com') throw new Error('Esa cuenta de prueba ya existe. Elige «Iniciar sesión».');
-      member = createMemberState({ name, email, marketing }, new Date(now()));
+      member = createMemberState({ name, email, marketing }, new Date(now()), firstService);
     } else if (!member && email === 'alex@example.com') {
       member = createMemberState({ id: 'PIT-0001', name: 'Alex Mendoza', email, marketing: false, vehicle: 'Toyota Corolla · 2020' }, new Date(now()));
     } else if (!member) {

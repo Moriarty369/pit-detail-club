@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDemoAuth } from '../src/demo-auth.js';
+import { createDemoAuth, ACCOUNT_KEY, SESSION_KEY } from '../src/demo-auth.js';
 
 function setup() {
   const memory = () => { const values = new Map(); return { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) }; };
@@ -16,7 +16,7 @@ test('no session until the code is confirmed; repeat login never duplicates the 
   assert.throws(() => auth.confirm(challenge.code === '000000' ? '111111' : '000000'), /no coincide/);
   const member = auth.confirm(challenge.code);
   assert.equal(member.entries.length, 1);
-  assert.equal(member.entries[0].points, 650);
+  assert.equal(member.entries[0].points, 65000);
   assert.equal(member.customer.email, 'alex@example.com');
   assert.throws(() => auth.confirm(challenge.code), /caducado/);
   auth.logout();
@@ -53,4 +53,33 @@ test('expiry and five wrong attempts invalidate codes; a session expires after t
   auth.confirm(good.code);
   advance(7200000);
   assert.equal(auth.current(), null);
+});
+
+test('el registro conserva el primer servicio elegido al volver a iniciar sesión', () => {
+  const { auth } = setup();
+  for (const [email, service, cents] of [['moto@example.com', 'Lavado de moto', 500], ['full@example.com', 'Detailing integral', 25000]]) {
+    const challenge = auth.request({ mode: 'register', name: 'Demo', email, firstService: { service, cents } });
+    const member = auth.confirm(challenge.code);
+    assert.equal(member.entries[0].points, cents * 10);
+    assert.equal(member.entries[0].service, service);
+    auth.logout();
+    const login = auth.request({ mode: 'login', email });
+    assert.deepEqual(auth.confirm(login.code).entries, member.entries);
+    auth.logout();
+  }
+});
+test('una sesión anterior actualiza y persiste todas las cuentas una sola vez', () => {
+  const { auth, storage, session } = setup();
+  const challenge = auth.request({ mode: 'login', email: 'alex@example.com' });
+  const member = auth.confirm(challenge.code);
+  member.version = 1;
+  member.rules.pointsPerDollar = 10;
+  member.entries[0].points = 650;
+  storage.setItem(ACCOUNT_KEY, JSON.stringify([member]));
+  const active = session.getItem(SESSION_KEY);
+  assert.equal(auth.current().entries[0].points, 65000);
+  assert.equal(JSON.parse(storage.getItem(ACCOUNT_KEY))[0].version, 2);
+  assert.equal(auth.current().entries[0].points, 65000);
+  assert.equal(auth.current().entries.length, 1);
+  assert.equal(session.getItem(SESSION_KEY), active);
 });

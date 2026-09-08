@@ -22,8 +22,8 @@ Para probar desde otro dispositivo de confianza en la misma Wi-Fi, iniciar con `
 
 1. Al abrir la app o escanear el QR sin sesión, se muestra «Iniciar sesión / Registrarse». Los enlaces directos a pantallas interiores también muestran el acceso.
 2. Para explorar, introducir `alex@example.com` y confirmar el código de prueba que muestra la propia página. No se envía un correo ni se verifica su propiedad.
-3. También se puede registrar una cuenta ficticia con nombre y correo. Cada cuenta nueva empieza con un detailing exterior de ejemplo por $65 y 650 puntos. El servicio se añade una sola vez al crear la cuenta.
-4. Desde el panel, registrar un servicio por $60 para llegar a 1.250 puntos. Canjear «Cuida tu motor» por 1.000 puntos y validar el código desde el panel: quedan 250. Un código repetido no se acepta.
+3. También se puede registrar una cuenta ficticia con nombre y correo. En el registro se eligen el primer servicio y su importe entre $5 y $250: de 5.000 a 250.000 puntos. Los ejemplos seleccionables son moto ($5), detailing exterior ($65) e integral ($250); el importe es editable. Alex empieza con $65 y 65.000 puntos. El servicio se añade una sola vez al crear la cuenta.
+4. Desde el panel, registrar un servicio por $60 para llegar a 125.000 puntos. Canjear «Cuida tu motor» por 100.000 puntos y validar el código desde el panel: quedan 25.000. Un código repetido no se acepta.
 5. En Mi perfil, «Cerrar sesión» vuelve al acceso. Al entrar de nuevo, el historial y el saldo se conservan en este navegador y el primer servicio no se duplica.
 6. El código de acceso de prueba dura cinco minutos y se invalida tras cinco intentos erróneos. La sesión dura dos horas en la pestaña; recargar la conserva y cerrar sesión la elimina.
 7. Restablecer demo desde el panel reinicia únicamente la cuenta actual a su primer servicio de ejemplo, previa confirmación. Las demás cuentas se conservan.
@@ -31,10 +31,12 @@ Para probar desde otro dispositivo de confianza en la misma Wi-Fi, iniciar con `
 ## Reglas provisionales
 
 - Moneda de demostración USD. No hay conversión a bolívares ni integración de cobros.
-- 10 puntos por $1 elegible; se redondean hacia abajo por servicio. Excluir desplazamiento del importe introducido.
-- Ofertas por 1.000, 1.500 y 2.500 puntos con condiciones visibles antes de solicitar el código.
+- 1.000 puntos por $1 elegible (tasa fija); cada céntimo suma 10 puntos. Excluir desplazamiento del importe introducido.
+- Ofertas por 100.000, 150.000 y 250.000 puntos con condiciones visibles antes de solicitar el código.
 - Rappel: al llegar a $250 en el trimestre, desbloquear 5% sobre mano de obra de un próximo servicio. Un canje por trimestre, sin acumulación con otras promociones. Se calcula con zona `America/Caracas`.
-- Códigos válidos cinco minutos. Se revalidan saldo/umbral y estado al consumirlos. Los ajustes de reglas se bloquean mientras haya códigos vigentes. Los puntos históricos no se recalculan.
+- Códigos válidos cinco minutos. Se revalidan saldo/umbral y estado al consumirlos. Los ajustes de reglas se bloquean mientras haya códigos vigentes. Los ajustes del rappel no modifican puntos históricos.
+
+Las cuentas existentes se migran una sola vez a la versión 2: los puntos ya ganados y los costes de canjes pendientes y usados se multiplican por 100, manteniendo el valor de las ofertas. Se respetan las bonificaciones históricas si se había personalizado la tasa anterior; los nuevos servicios siempre suman 1.000/$. Se conservan identificadores, fechas, importes y estado de los canjes. Restablecer mantiene el importe y fecha del primer servicio elegido.
 
 Las condiciones son hipótesis de producto para probar el recorrido, no tarifas o promociones comerciales aprobadas. El panel registra que el empleado ha revisado las condiciones; no calcula facturas ni aplica automáticamente descuentos a una orden.
 
