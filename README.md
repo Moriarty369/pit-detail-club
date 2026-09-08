@@ -5,7 +5,7 @@ Primera versión navegable para validar la fidelización antes de conectar cuent
 ## Ejecutar
 
 ```sh
-cd /Users/sibarita/Desktop/DETAIL/07_mvp/app
+cd pit-detail-club
 npm install
 npm run dev
 ```
@@ -54,3 +54,15 @@ PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers npm run test:e2e
 Pruebas de negocio: puntos, duplicados, saldo insuficiente, expiración, canjes, límites de trimestre y cambios de reglas. Pruebas de navegador: recorrido de canje y servicio, persistencia, registro, escape de HTML, generación de QR y ausencia de desbordamiento en móvil.
 
 Se utiliza [Vite 6](https://v6.vite.dev/guide/) por compatibilidad con el Node 20.10 disponible y [node-qrcode](https://github.com/soldair/node-qrcode) para generar QR reales. Dependencias fijadas en `package-lock.json`.
+
+## Beta compartida y repositorio
+
+El código se conserva en un repositorio Git local y en el repositorio fuente de ChatGPT Sites. No es un repositorio de GitHub. Ramas: `main` (versión publicada), `develop` (integración) y `beta/colaboracion` (trabajo de la beta). Las tres apuntarán a la primera beta una vez validada; las próximas mejoras parten de `develop` en una rama nueva.
+
+El despliegue se realiza desde una versión guardada de Sites cuyo commit coincide con `main`. La configuración está en `.openai/hosting.json`. `scripts/package-site.py` empaqueta únicamente `dist/` y ese manifiesto. El ZIP/tar de publicación nunca incluye código fuente, documentos OSINT ni fotos sin revisar. No hay publicación automática por cada push.
+
+«Aportar idea» prepara un comentario que el socio puede copiar y enviar al grupo por su cuenta. No se reciben ni almacenan comentarios en un servidor. Cada dispositivo mantiene su propia demo.
+
+El acceso de la beta se configura para cualquiera con el enlace. `noindex` y `robots.txt` solicitan que no se indexe, pero no son control de acceso. No introducir datos reales.
+
+El alojamiento Sites está incluido durante su beta dentro de los límites del plan de ChatGPT. No se ha contratado un plan adicional ni un dominio. Los límites pueden cambiar: https://learn.chatgpt.com/docs/sites

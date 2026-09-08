@@ -2,6 +2,7 @@ import QRCode from 'qrcode';
 import { offers, services, createState, balance, quarterSpend, quarter, addService, available, requestReward, redeem, updateRules } from './domain.js';
 import './style.css';
 import './branding.css';
+import './beta.css';
 
 const icons = {
   home: '<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/>',
@@ -43,7 +44,7 @@ function navButton(id, name, glyph) { return `<button class="nav-item ${view ===
 function render() {
   const name = state.customer.name.split(' ')[0];
   app.innerHTML = `<aside class="sidebar"><a class="brand-home" href="#home" aria-label="PIT DETAIL inicio">${brandImage()}<span class="brand-club">CLUB DE BENEFICIOS</span></a><div class="sidebar-label">CUIDAMOS LO QUE TE MUEVE</div><nav aria-label="Navegación principal">${navButton('home', 'Mi club', 'home')}${navButton('rewards', 'Beneficios', 'gift')}${navButton('history', 'Mis servicios', 'clock')}${navButton('profile', 'Mi perfil', 'user')}</nav><div class="sidebar-bottom"><div class="mini-brand"><span class="racing-stripes"><i></i><i></i><i></i></span><p>Más cuidado.<br><strong>Más kilómetros juntos.</strong></p></div>${navButton('admin', 'Panel del negocio', 'tool')}<div class="demo-label"><span></span> Demo · datos ficticios</div></div></aside>
-  <div class="workspace"><header class="topbar"><a class="mobile-brand" href="#home" aria-label="PIT DETAIL inicio">${brandImage()}<span>CLUB</span></a><div class="breadcrumb">PIT DETAIL <span>/</span> ${view === 'admin' ? 'Negocio' : 'Tu espacio'}</div><div class="topbar-right"><span class="location">${icon('pin')} Venezuela</span><button class="avatar-button" data-nav="profile" aria-label="Ver mi perfil"><span class="avatar">${esc(state.customer.name.split(' ').map(s => s[0]).slice(0, 2).join(''))}</span><span>${esc(name)}</span></button></div></header><main id="main" tabindex="-1">${({ home: homePage, rewards: rewardsPage, history: historyPage, profile: profilePage, admin: adminPage })[view]()}</main><footer><span>© ${new Date().getFullYear()} PIT DETAIL · Hecho para cuidar tu vehículo.</span><span>Prototipo de fidelización <span class="footer-dot">●</span></span></footer></div>`;
+  <div class="workspace"><header class="topbar"><a class="mobile-brand" href="#home" aria-label="PIT DETAIL inicio">${brandImage()}<span>CLUB</span></a><div class="breadcrumb">PIT DETAIL <span>/</span> ${view === 'admin' ? 'Negocio' : 'Tu espacio'}</div><div class="topbar-right"><button class="feedback-button" data-action="feedback" aria-label="Aportar idea">${icon("plus")}<span>Aportar idea</span></button><span class="location">${icon('pin')} Venezuela</span><button class="avatar-button" data-nav="profile" aria-label="Ver mi perfil"><span class="avatar">${esc(state.customer.name.split(' ').map(s => s[0]).slice(0, 2).join(''))}</span><span>${esc(name)}</span></button></div></header><main id="main" tabindex="-1"><div class="beta-banner"><strong>BETA PARA SOCIOS</strong><span>Explora con datos ficticios. Cada dispositivo tiene su propia demo.</span></div>${({ home: homePage, rewards: rewardsPage, history: historyPage, profile: profilePage, admin: adminPage })[view]()}</main><footer><span>© ${new Date().getFullYear()} PIT DETAIL · Hecho para cuidar tu vehículo.</span><span>Prototipo de fidelización <span class="footer-dot">●</span></span></footer></div>`;
   if (view === 'home') QRCode.toCanvas(document.querySelector('#card-qr'), `PIT-DEMO:${state.customer.id}`, { width: 66, margin: 1, color: { dark: '#151515', light: '#ffffff' } }).catch(() => toast('No se pudo generar el QR.'));
 }
 function heading(eyebrow, title, subtitle, action = '') { return `<div class="page-heading"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${subtitle}</p></div>${action}</div>`; }
@@ -83,6 +84,14 @@ document.addEventListener('click', async event => {
       case 'card': await cardModal(); break;
       case 'rappel': rappelModal(); break;
       case 'register': registerModal(); break;
+      case 'feedback': openModal(`<div class="modal-eyebrow">CONSTRUYAMOS PIT DETAIL</div><h2 id="modal-title">Tu idea suma.</h2><p>Prepara tu comentario y cópialo para enviarlo al grupo de socios. No se envía automáticamente.</p><form id="feedback-form"><label>Sobre qué pantalla<select name="screen">${['Mi club', 'Beneficios', 'Mis servicios', 'Mi perfil', 'Panel del negocio', 'Idea general'].map(label => `<option>${label}</option>`).join('')}</select></label><label>Tu idea o problema<textarea name="idea" required minlength="5" maxlength="2000" rows="5" placeholder="Qué cambiarías y por qué. Si es un fallo, cuéntanos los pasos para verlo."></textarea></label><button class="button primary full" type="submit">Preparar comentario ${icon('arrow')}</button></form><div id="feedback-output"></div>`); break;
+      case 'copy-feedback': {
+        const output = document.querySelector('#feedback-text');
+        try { await navigator.clipboard.writeText(output.value); toast('Idea copiada. Pégala en el grupo de socios para compartirla.'); }
+        catch { output.focus(); output.select(); toast('Seleccionamos el comentario para que puedas copiarlo manualmente.'); }
+        break;
+      }
+
       case 'validate-demo': { const code = modal.dataset.code; closeModal(); navigate('admin'); document.querySelector('[name="code"]').value = code; document.querySelector('[name="code"]').focus(); break; }
       case 'reset': openModal('<h2 id="modal-title">¿Volver a empezar?</h2><p>Se eliminarán los cambios locales de la demo y volverá el perfil de Alex con sus servicios de ejemplo.</p><button class="button primary full" data-action="confirm-reset">Restablecer datos de demostración</button>'); break;
       case 'confirm-reset': save(createState()); closeModal(); render(); toast('La demo vuelve a estar lista.'); break;
@@ -93,6 +102,12 @@ document.addEventListener('click', async event => {
 document.addEventListener('submit', async event => {
   const form = event.target; event.preventDefault(); const data = new FormData(form);
   try {
+    if (form.id === 'feedback-form') {
+      const idea = String(data.get('idea') || '').trim();
+      if (idea.length < 5) throw new Error('Escribe al menos cinco caracteres para explicar tu idea.');
+      const message = ['PIT DETAIL · Feedback beta 0.1', `Pantalla: ${data.get('screen')}`, '', idea, '', `App: ${location.origin}`].join('\n');
+      document.querySelector('#feedback-output').innerHTML = `<label class="feedback-result">Comentario listo para compartir<textarea id="feedback-text" rows="7" readonly>${esc(message)}</textarea></label><button class="button dark full" type="button" data-action="copy-feedback">Copiar idea</button>`;
+    }
     if (form.id === 'profile-form' || form.id === 'register-form') {
       const name = String(data.get('name')).trim(), email = String(data.get('email')).trim(); if (name.length < 2) throw new Error('Escribe un nombre de al menos dos caracteres.');
       const base = form.id === 'register-form' ? { ...createState(), entries: [], redemptions: [], rules: state.rules } : state;
