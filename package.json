@@ -19,13 +19,48 @@
     "check:customer": "node scripts/check-customer-build.js",
     "test:mvp": "npm run build:mvp && playwright test --config playwright.mvp.config.js",
     "demo:prepare": "node --experimental-sqlite server/prepare-review.js",
-    "demo:mvp": "PIT_DB=.local/review.sqlite node --experimental-sqlite server/start.js"
+    "demo:mvp": "PIT_DB=.local/review.sqlite node --experimental-sqlite server/start.js",
+    "typecheck": "tsc -p tsconfig.cloud.json",
+    "build:cloud": "vite build --config vite.cloud.config.ts",
+    "build:cloud:admin": "vite build --config vite.cloud.config.ts --mode admin",
+    "test:cloud": "vitest run --config vitest.cloud.config.ts",
+    "dev:cloud": "wrangler dev --port 8787",
+    "deploy:cloud": "npm run build:cloud && wrangler deploy",
+    "verify:cloud": "npm run typecheck && npm run test:cloud && npm run build:cloud && npm run build:cloud:admin",
+    "test:cloud:e2e": "playwright test --config playwright.cloud.config.ts",
+    "dev:cloud:admin": "wrangler dev --config cloud/admin/wrangler.jsonc --port 8788 --ip 127.0.0.1"
   },
   "dependencies": {
-    "qrcode": "^1.5.4"
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
+    "hono": "^4.13.7",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260908.1",
+    "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.55.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.13.3",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "jsdom": "^27.0.1",
+    "supabase": "^2.117.0",
+    "typescript": "^7.0.2",
     "vite": "^6.4.1",
-    "@playwright/test": "^1.55.0"
+    "vitest": "^5.0.0",
+    "wrangler": "^4.130.0"
+  },
+  "overrides": {
+    "sharp": "^0.35.4"
+  },
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0"
   }
 }

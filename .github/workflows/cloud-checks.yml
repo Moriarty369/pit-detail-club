@@ -1,0 +1,36 @@
+name: Verify connected MVP
+on:
+  push:
+    branches: [feat/cloud-mvp, develop, main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm test
+      - run: npm run test:server
+      - run: npm run verify:cloud
+      - name: Confirm customer artifact contains no administrative interface
+        run: node scripts/check-customer-build.js dist-cloud
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Start disposable PostgreSQL, Auth and email inbox
+        run: npx supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - run: node scripts/prepare-cloud-tests.mjs
+      - name: Exercise real Auth, TOTP, database, API and browser
+        run: npm run test:cloud:e2e
+      - name: Shut down test database
+        if: always()
+        run: npx supabase stop --no-backup
+      # Traces contain test-only TOTP secrets. Keep them private to the runner;
+      # do not upload them as artifacts of this public repository.
