@@ -1,117 +1,57 @@
 # PIT DETAIL Club
 
-MVP de fidelización con dos aplicaciones independientes y una API con permisos en el servidor. El portal de clientes conserva el diseño de la beta; el panel del negocio tiene su propia entrada, compilación y dirección.
+Aplicación de fidelización para detailing, mecánica básica y cambio de aceite en Venezuela. Conserva el diseño de la beta, con tarjeta de puntos, promociones, rappel y vehículos del cliente: autos, motos y embarcaciones.
 
-| Rol | Operaciones |
-| --- | --- |
-| Cliente | Registrarse, iniciar sesión, consultar su tarjeta, saldo e historial, editar su perfil y solicitar códigos de beneficios. |
-| Administrador | Buscar clientes, registrar servicios, confirmar canjes, ajustar el rappel, consultar actividad y generar el QR de acceso al club. |
+La versión conectada usa **React + TypeScript + Vite**, una API **Hono en Cloudflare Workers** y **PostgreSQL + Supabase Auth**. Está preparada para los planes gratuitos. La publicación necesita conectar las cuentas del negocio y configurar un proveedor de acceso.
 
-Una cuenta de cliente no puede convertirse en administrador. No existe registro público de administradores. Conocer una URL o alterar la interfaz no concede permisos sobre la API.
+| Componente                   | Ubicación                          | Responsabilidad                                                                         |
+| ---------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------- |
+| App cliente                  | `cloud/client/`                    | Registro, acceso, tarjeta, vehículos, puntos, beneficios y perfil.                      |
+| Administración independiente | `cloud/admin/`                     | Servicios, anulaciones, canjes, reglas y auditoría. Sin publicación pública automática. |
+| API                          | `cloud/worker/`                    | Cookies HttpOnly, validación, permisos y comunicación con Supabase.                     |
+| Base de datos                | `supabase/migrations/`             | Transacciones, permisos por fila, puntos, historial y roles.                            |
+| Pruebas                      | `cloud/tests/`, `tests/cloud-e2e/` | Vitest, PostgreSQL, Playwright Chromium/WebKit y recuperación de copias.                |
 
-## Qué está publicado
+```mermaid
+flowchart LR
+  QR[QR o enlace] --> Cliente[App cliente · React]
+  Cliente --> API[API cliente · Cloudflare]
+  Equipo[Equipo del negocio] --> Admin[App y API administrativa · acceso privado]
+  API --> Auth[Supabase Auth · correo/Google y TOTP]
+  Admin --> Auth
+  API --> DB[(PostgreSQL · RLS y transacciones)]
+  Admin --> DB
+```
 
-[Beta pública para socios](https://moriarty369.github.io/pit-detail-club/): únicamente el portal de clientes en modo demostración. Alex (`alex@example.com`) y las nuevas cuentas ficticias empiezan con un servicio de $65 y 65.000 puntos. Se introduce el código de prueba mostrado en pantalla; no se envía correo ni se verifica identidad. Las cuentas solo se conservan en ese navegador y pueden ser alteradas por quien lo controla. No usar datos reales.
+La cuenta nueva empieza en cero. Solo un servicio registrado por administración genera puntos: **$1 = 1.000 puntos**, con importes de $5 a $250. El saldo no se importa de la demo ni se acepta desde el navegador. Cada servicio tiene una referencia para evitar duplicados; las anulaciones compensan el movimiento original y quedan auditadas. Si sus puntos ya se gastaron, la anulación se rechaza para no crear saldo negativo.
 
-La beta ya no contiene el panel administrativo ni controles para asignar servicios, sumar puntos o confirmar canjes. El registro tampoco permite al cliente elegir el importe de un servicio. La base de datos del MVP conectado es independiente de la demo: no se importan saldos del navegador como operaciones reales.
+Los códigos de canje caducan a los cinco minutos; el descuento de puntos ocurre al confirmarlos el administrador. El rappel usa el trimestre de Caracas y se valida nuevamente al canjear. Varios vehículos pueden pertenecer a una cuenta; todavía no hay saldos compartidos entre cuentas de una flota.
 
-El QR existente sigue apuntando a la misma URL pública y solicita acceso. El QR de la tarjeta identifica al cliente; no constituye una sesión ni permite autorizar operaciones.
+El segundo factor TOTP es obligatorio para administradores y opcional para clientes. Una vez activado, la API y la base exigen completarlo. Las contraseñas y factores los gestiona Supabase; la app no guarda tokens de acceso en `localStorage`. Los roles se mantienen en un esquema privado y no se pueden elegir al registrarse. El Worker utiliza la clave pública y la sesión del usuario, nunca `service_role`.
 
-## Ejecutar el MVP conectado
+## Ejecutar y verificar
 
-Requisito: Node 22.13 o posterior con `node:sqlite` y npm. Se mantiene `--experimental-sqlite` por compatibilidad con el Node 23.3 del entorno de desarrollo.
+Node 24 LTS, npm y, para las pruebas completas, Docker y herramientas PostgreSQL 17.
 
 ```sh
 npm ci
-npm run build:mvp
-```
-
-Crear un administrador con variables de entorno propias. La contraseña debe tener entre 12 y 128 caracteres; no guardar credenciales en Git. Este ejemplo pide la contraseña sin mostrarla ni escribirla en el historial (bash o zsh):
-
-```sh
-export PIT_ADMIN_EMAIL='tu-correo@ejemplo.com'
-export PIT_ADMIN_NAME='Tu nombre'
-read -r -s PIT_ADMIN_PASSWORD
-export PIT_ADMIN_PASSWORD
-npm run admin:create
-unset PIT_ADMIN_PASSWORD
-npm run start:mvp
-```
-
-Direcciones locales:
-
-- Clientes: http://127.0.0.1:3001
-- Administración: http://127.0.0.1:3002
-
-Registrarse en el portal de clientes crea una cuenta con saldo cero. Desde administración, buscar el correo, abrir el cliente y registrar su primer servicio. Por ejemplo, un lavado de moto de $5 suma 5.000 puntos; un detailing de $250 suma 250.000. El importe lo introduce exclusivamente el administrador. El cliente ve el saldo actualizado al recargar y mediante comprobaciones periódicas cuando no está editando un formulario.
-
-El cliente solicita un código de beneficio. El administrador comprueba sus condiciones y lo confirma desde su portal. Los puntos se descuentan al confirmar; solicitar un código no los descuenta. El registro del servicio usa una referencia para que reenviar la misma solicitud no duplique los puntos.
-
-SQLite conserva cuentas, sesiones, servicios, canjes, reglas y actividad en `.local/pit-detail.sqlite`. Para elegir otro archivo, definir `PIT_DB` tanto al crear el administrador como al iniciar el servidor. El directorio `.local`, bases de datos y archivos `.env` están excluidos de Git. No publicar esos archivos.
-
-### Prueba local con datos ficticios
-
-```sh
-npm run demo:prepare
-npm run demo:mvp
-```
-
-Genera una base separada `.local/review.sqlite`, dos cuentas con contraseñas aleatorias y el archivo privado `.local/review-access.txt` con las credenciales. El cliente de ejemplo tiene su primer servicio de $65 registrado por el administrador. Ejecutarlo de nuevo conserva la base y las cuentas existentes. Nunca emplear esta base para el negocio real.
-
-## Separación y futuro despliegue en intranet
-
-| Pieza | Código | Compilación | Puerto local |
-| --- | --- | --- | --- |
-| Portal QR de clientes | `src/main.js`, `src/customer-portal.js` | `dist-customer` | 3001 |
-| Administración | `admin/` | `dist-admin` | 3002 |
-| API y persistencia | `server/` | Node, no es un sitio estático | Dos listeners con rutas y sesiones distintas |
-| Demo pública aislada | Adaptador de demostración | `dist` | GitHub Pages |
-
-La API de clientes solo expone su cuenta autenticada mediante `/api/me`; no acepta identificadores ajenos para consultar perfiles. Las rutas administrativas solo existen en el listener administrativo y exigen el rol `admin`. Cada portal usa su propia cookie de sesión.
-
-Para la futura intranet, el proxy público debe dirigirse exclusivamente al listener de clientes. El listener administrativo y `dist-admin` deben quedar en la red privada/VPN, con su proxy HTTPS propio. Ambos acceden al mismo servidor de aplicación y base de datos; no se debe copiar SQLite a dos máquinas y esperar sincronización. Se puede iniciar un único listener con `PIT_APP=customer` o `PIT_APP=admin`; dos procesos en el mismo host pueden usar el mismo archivo SQLite. No colocar SQLite en un sistema de archivos de red.
-
-Configuración disponible: `PIT_DB`, `PIT_APP` (`all`, `customer`, `admin`), `PIT_CUSTOMER_HOST`, `PIT_ADMIN_HOST`, `PIT_CUSTOMER_PORT`, `PIT_ADMIN_PORT`, `PIT_CUSTOMER_ORIGIN` y `PIT_ADMIN_ORIGIN`. Por defecto, ambos listeners solo escuchan en `127.0.0.1`. En producción, usar `NODE_ENV=production` y orígenes HTTPS exactos. El proxy debe preservar `Origin`; la API exige origen permitido y una cabecera propia para las mutaciones. No existe CORS abierto. Los límites por dirección usan la IP del socket; detrás de un proxy se comparten, por lo que deben configurarse también límites en el proxy antes del piloto.
-
-GitHub Pages publica archivos estáticos. La versión conectada necesita alojamiento para Node y almacenamiento persistente; todavía no se ha desplegado una API pública ni una intranet. El workflow compila ambas aplicaciones, comprueba que los paquetes de clientes no incluyen operaciones administrativas y publica **solo `dist`**. `dist-admin`, `dist-customer` y `server/` no se suben al sitio Pages.
-
-El código fuente está en un repositorio público. La separación protege datos y operaciones mediante permisos de servidor, no mediante secreto del código.
-
-## Reglas actuales
-
-- USD, sin conversión a bolívares ni integración de cobros.
-- 1.000 puntos por $1 elegible; cada céntimo suma 10 puntos. Registrar importes de $5 a $250, sin desplazamiento.
-- Ofertas por 100.000, 150.000 y 250.000 puntos, con condiciones visibles.
-- Rappel inicial: $250 en el trimestre desbloquean 5% sobre mano de obra de un próximo servicio, una vez por trimestre. Zona `America/Caracas`.
-- Códigos de cinco minutos. Se revalidan el saldo, las condiciones y el estado al confirmarlos. Las reglas globales no se pueden cambiar mientras existan códigos vigentes.
-- El historial de actividad identifica al actor de servicios, canjes y cambios de reglas. No se permite borrar o editar servicios desde la UI.
-
-Las promociones siguen siendo hipótesis de producto, pendientes de aprobación comercial. El sistema registra la comprobación del administrador; no aplica descuentos a una factura.
-
-## Estado del acceso y próximos incrementos
-
-El MVP conectado guarda hashes scrypt con sal aleatoria; no guarda contraseñas en el navegador. Las sesiones son tokens aleatorios almacenados como hashes en el servidor, duran dos horas y se revocan al cerrar sesión. Las cookies son `HttpOnly`, `SameSite=Strict` y `Secure` en producción. Hay límites de intentos, validación de campos, autorización por rol y transacciones SQLite para modificar servicios y canjes.
-
-Antes de incorporar clientes reales quedan: verificación de correo y recuperación de cuenta, MFA de administradores, anulaciones/devoluciones auditadas, copias de seguridad y prueba de restauración, condiciones comerciales y de privacidad, configuración del alojamiento HTTPS y pruebas de carga. El registro actual autentica por contraseña, pero todavía no demuestra la propiedad del correo.
-
-Referencias de las decisiones de implementación: [SQLite en Node](https://nodejs.org/api/sqlite.html), [almacenamiento de contraseñas](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html), [sesiones](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) y [protección CSRF](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
-
-## Verificación
-
-```sh
-npm test
-npm run test:server
-npm run build:mvp
-npm run build
-npm run check:customer
+npm run verify:cloud
 npx playwright install chromium webkit
-npm run test:e2e
-npm run test:mvp
-npm run test:pages
+npx supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+node scripts/prepare-cloud-tests.mjs
+npm run test:cloud:e2e
 ```
 
-Las pruebas cubren reglas de puntos y canjes, sesiones, acceso entre roles, intentos de asignarse puntos o leer otra cuenta, CSRF, solicitudes repetidas, persistencia SQLite, errores internos y el recorrido real cliente/administrador en Chromium y WebKit. La demo mantiene comprobaciones móviles, recuperación de descargas, almacenamiento bloqueado y acceso con el prefijo de GitHub Pages.
+La preparación crea únicamente cuentas ficticias en Supabase local y archivos privados ignorados por Git. Rechaza proyectos remotos y no sobrescribe variables locales existentes. Playwright arranca ambos portales en `127.0.0.1:8787` y `127.0.0.1:8788` y verifica el registro mediante la bandeja de correo local, MFA y operaciones entre portales.
 
-En este equipo, los navegadores están en `/private/tmp/pit-detail-browsers`: anteponer `PLAYWRIGHT_BROWSERS_PATH=/private/tmp/pit-detail-browsers` a los comandos de Playwright.
+`npm run dev:cloud` sirve la compilación cliente; `npm run dev:cloud:admin` sirve la administrativa. Después de modificar React, reconstruir con `build:cloud` o `build:cloud:admin`.
 
-Ramas: `main` para publicación y `develop` para integración. Esta separación se desarrolla en `feat/separate-customer-admin`. El remoto `github` es el repositorio compartido; `origin` conserva la copia anterior de Sites. El despliegue de Pages puede ejecutarse manualmente con el workflow `pages.yml`.
+El workflow `cloud-checks.yml` ejecuta pruebas unitarias, integración PostgreSQL, recorridos reales de navegador y una copia cifrada seguida de restauración sobre una base vacía. Solo publica capturas de la interfaz con datos de prueba; nunca trazas con factores de acceso.
+
+## Publicar el piloto
+
+Seguir [la guía de despliegue gratuito y operación](docs/cloud-deployment.md). El workflow manual `cloud-deploy.yml` vuelve a ejecutar las pruebas, aplica migraciones, comprueba la configuración de acceso y publica exclusivamente el portal cliente. Genera un PNG con el QR y un archivo con el enlace.
+
+La [beta de GitHub Pages](https://moriarty369.github.io/pit-detail-club/) sigue siendo una demostración con datos en el navegador. El enlace y QR existentes se cambiarán únicamente después de comprobar el acceso al nuevo despliegue. Los comandos `build`, `test` y `test:server` mantienen las versiones anteriores; los comandos de la versión nueva llevan `cloud`.
+
+La implementación anterior de Node/SQLite se conserva documentada en [la guía del prototipo local](docs/legacy-sqlite.md). No debe confundirse con el backend Supabase del nuevo MVP.

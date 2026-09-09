@@ -25,10 +25,11 @@
     "build:cloud:admin": "vite build --config vite.cloud.config.ts --mode admin",
     "test:cloud": "vitest run --config vitest.cloud.config.ts",
     "dev:cloud": "wrangler dev --port 8787",
-    "deploy:cloud": "npm run build:cloud && wrangler deploy",
+    "deploy:cloud": "npm run build:cloud && node scripts/deploy-cloud.mjs",
     "verify:cloud": "npm run typecheck && npm run test:cloud && npm run build:cloud && npm run build:cloud:admin",
     "test:cloud:e2e": "playwright test --config playwright.cloud.config.ts",
-    "dev:cloud:admin": "wrangler dev --config cloud/admin/wrangler.jsonc --port 8788 --ip 127.0.0.1"
+    "dev:cloud:admin": "wrangler dev --config cloud/admin/wrangler.jsonc --port 8788 --ip 127.0.0.1",
+    "format:cloud": "prettier --write cloud tests/cloud-e2e scripts/*cloud*.mjs scripts/backup-cloud.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -51,6 +52,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^27.0.1",
+    "prettier": "^3.9.6",
     "supabase": "^2.117.0",
     "typescript": "^7.0.2",
     "vite": "^6.4.1",
