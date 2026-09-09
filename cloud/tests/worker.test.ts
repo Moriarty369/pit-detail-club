@@ -10,6 +10,9 @@ const mock = vi.hoisted(() => ({
   },
   rpc: vi.fn(),
   factory: vi.fn(),
+  oauth: vi.fn(),
+  exchange: vi.fn(),
+  signOut: vi.fn(),
 }));
 vi.mock("@supabase/ssr", () => ({ createServerClient: mock.factory }));
 import { createApp, type Bindings } from "../worker/app";
@@ -49,15 +52,27 @@ beforeEach(() => {
   mock.role = "customer";
   mock.aal = "aal1";
   mock.factors = [];
-  mock.rpc
-    .mockReset()
-    .mockImplementation(async (name) => ({
-      data: name === "pit_session_role" ? mock.role : { points: 0 },
-      error: null,
-    }));
+  mock.oauth.mockReset().mockResolvedValue({
+    data: {
+      url: "https://project.example.test/auth/v1/authorize?provider=google",
+    },
+    error: null,
+  });
+  mock.exchange.mockReset().mockResolvedValue({
+    data: { user: mock.user },
+    error: null,
+  });
+  mock.signOut.mockReset().mockResolvedValue({ error: null });
+  mock.rpc.mockReset().mockImplementation(async (name) => ({
+    data: name === "pit_session_role" ? mock.role : { points: 0 },
+    error: null,
+  }));
   mock.factory.mockReset().mockImplementation((_url, _key, options) => ({
     rpc: mock.rpc,
     auth: {
+      signInWithOAuth: mock.oauth,
+      exchangeCodeForSession: mock.exchange,
+      signOut: mock.signOut,
       getUser: async () => {
         options.cookies.setAll([
           { name: "pit-client", value: "opaque-test-token", options: {} },
@@ -153,4 +168,59 @@ test("rate limit rejection precedes password processing", async () => {
   );
   expect(r.status).toBe(429);
   expect(mock.factory).not.toHaveBeenCalled();
+});
+test("Google access requires an enabled provider and uses the configured callback", async () => {
+  expect((await request("/auth/google", "POST", {})).status).toBe(404);
+  expect(mock.oauth).not.toHaveBeenCalled();
+  const r = await request(
+    "/auth/google",
+    "POST",
+    {},
+    { GOOGLE_ENABLED: "true" },
+  );
+  expect(r.status).toBe(200);
+  expect(mock.oauth).toHaveBeenCalledWith({
+    provider: "google",
+    options: {
+      redirectTo: env.APP_ORIGIN + "/api/auth/callback",
+      skipBrowserRedirect: true,
+    },
+  });
+  expect(r.headers.get("cache-control")).toContain("no-store");
+});
+test("Google login rejects a client-supplied redirect", async () => {
+  const r = await request(
+    "/auth/google",
+    "POST",
+    {
+      redirectTo: "https://evil.example.test",
+    },
+    { GOOGLE_ENABLED: "true" },
+  );
+  expect(r.status).toBe(400);
+  expect(mock.oauth).not.toHaveBeenCalled();
+});
+test("OAuth callback rejects missing and invalid codes without accessing member data", async () => {
+  const missing = await request("/auth/callback?error=access_denied");
+  expect(missing.headers.get("location")).toBe("/?auth=failed");
+  expect(mock.exchange).not.toHaveBeenCalled();
+  mock.exchange.mockResolvedValue({
+    data: { user: null },
+    error: { message: "Invalid code" },
+  });
+  const invalid = await request("/auth/callback?code=invalid-test-code");
+  expect(invalid.headers.get("location")).toBe("/?auth=failed");
+  expect(mock.rpc).not.toHaveBeenCalled();
+});
+test("OAuth callback rejects the wrong portal and ignores external destinations", async () => {
+  mock.role = "admin";
+  const rejected = await request("/auth/callback?code=test-code");
+  expect(rejected.headers.get("location")).toBe("/?auth=wrong-portal");
+  expect(mock.signOut).toHaveBeenCalledWith({ scope: "local" });
+  mock.role = "customer";
+  const accepted = await request(
+    "/auth/callback?code=test-code&next=https://evil.example.test",
+  );
+  expect(accepted.status).toBe(302);
+  expect(accepted.headers.get("location")).toBe("/#home");
 });

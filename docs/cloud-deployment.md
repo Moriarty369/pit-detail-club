@@ -44,6 +44,24 @@ Configurar Supabase Auth:
 
 Durante la preparación inicial, mantener el registro cerrado en Supabase. Tras configurar Google o SMTP y los orígenes definitivos, habilitarlo; el script de publicación comprueba también este ajuste. Los callbacks locales sirven para revisar la app desde el equipo autorizado y deben revisarse al preparar el acceso público.
 
+### Google para el piloto
+
+El propietario ha elegido Google como primer método de acceso. El botón existente sirve tanto para crear la cuenta como para volver a entrar; los puntos se asignan únicamente al registrar servicios desde administración.
+
+En [Google Auth Platform](https://console.cloud.google.com/auth/overview), crear o seleccionar el proyecto del negocio y configurar el nombre `PIT DETAIL Club`, correo de soporte del propietario y público externo. Para el piloto en modo de pruebas, añadir las cuentas Google de los participantes en Audience. Limitar los permisos a `openid`, `userinfo.email` y `userinfo.profile`.
+
+Crear un cliente OAuth de tipo **Aplicación web** con:
+
+| Campo | Valor |
+| --- | --- |
+| Nombre | `PIT DETAIL Club` |
+| Origen JavaScript | `https://pit-detail-club.pit-detail.workers.dev` |
+| URI de redirección | `https://tbudcwwvkfdeziukmydq.supabase.co/auth/v1/callback` |
+
+Descargar el JSON del cliente y tratarlo como credencial privada; no añadirlo al repositorio ni pegarlo en comentarios. Su `client_id` y `client_secret` se configuran en el proveedor Google del proyecto Supabase. No se necesita el secreto Google en React, Cloudflare ni GitHub.
+
+Una vez configurado, verificar el proveedor, habilitar el registro en Supabase y establecer `GOOGLE_ENABLED=true`, `EMAIL_ENABLED=false` en el entorno de despliegue y en los portales locales. Publicar el cliente y comprobar con una cuenta real la vuelta desde Google, el alta con saldo cero, el cierre de sesión y TOTP. Las pruebas automatizadas cubren los controles del flujo OAuth; no sustituyen esta comprobación del proveedor real.
+
 ## Publicación desde GitHub
 
 Crear el entorno `production` en el repositorio y configurar sus secretos mediante la interfaz segura:

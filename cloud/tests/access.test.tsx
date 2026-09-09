@@ -17,13 +17,11 @@ test("API failures keep the login form usable and never enter the account", asyn
   const onSession = vi.fn();
   vi.stubGlobal(
     "fetch",
-    vi
-      .fn()
-      .mockResolvedValue({
-        ok: false,
-        status: 503,
-        json: async () => ({ error: "Servidor no disponible." }),
-      }),
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({ error: "Servidor no disponible." }),
+    }),
   );
   render(
     <Login
@@ -62,4 +60,36 @@ test("customer names are escaped as text, never interpreted as markup", () => {
   );
   expect(container.querySelector("img")).toBeNull();
   expect(screen.getByRole("heading").textContent).toContain("<img");
+});
+test("Google-only access remains usable when the provider cannot start", async () => {
+  const onSession = vi.fn();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({ error: "No se pudo iniciar Google." }),
+    }),
+  );
+  render(
+    <Login
+      config={{
+        portal: "customer",
+        emailEnabled: false,
+        googleEnabled: true,
+        captchaSiteKey: null,
+      }}
+      onSession={onSession}
+    />,
+  );
+  expect(screen.queryByLabelText("Contraseña")).toBeNull();
+  const button = screen.getByRole("button", { name: /Continuar con Google/ });
+  fireEvent.click(button);
+  await waitFor(() =>
+    expect(screen.getByRole("alert").textContent).toContain(
+      "No se pudo iniciar Google",
+    ),
+  );
+  expect((button as HTMLButtonElement).disabled).toBe(false);
+  expect(onSession).not.toHaveBeenCalled();
 });
