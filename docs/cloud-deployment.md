@@ -14,6 +14,15 @@ Fuentes oficiales, revisadas el 9 de septiembre de 2026: [Workers](https://devel
 
 ## Cuentas y autenticación
 
+### Preparación realizada (9 de septiembre de 2026)
+
+- Proyecto Supabase Free `pit-detail-club` creado, migración aplicada y permisos anónimos comprobados.
+- Cloudflare conectado y subdominio `pit-detail.workers.dev` reservado. Origen previsto: `https://pit-detail-club.pit-detail.workers.dev`; todavía no hay un Worker publicado.
+- Site URL y callbacks de Supabase configurados para ese origen y para los dos portales locales.
+- Secretos de Supabase y sesión guardados en el entorno `production` de GitHub con autorización del propietario. Variables de proyecto, cuenta Cloudflare y origen configuradas.
+- Pendiente configurar Google OAuth o SMTP y probar el acceso real antes de abrir el registro y publicar. La automatización de GitHub requiere además su token de despliegue de Cloudflare; la sesión OAuth local permite publicar desde el equipo autorizado.
+- El enlace y QR de GitHub Pages siguen abriendo la beta anterior.
+
 Conectar las cuentas del negocio sin compartir contraseñas por chat:
 
 ```sh
@@ -42,13 +51,12 @@ Crear el entorno `production` en el repositorio y configurar sus secretos median
 | Secreto                 | Contenido                                                       |
 | ----------------------- | --------------------------------------------------------------- |
 | `CLOUDFLARE_API_TOKEN`  | Token limitado al despliegue de Workers de la cuenta.           |
-| `CLOUDFLARE_ACCOUNT_ID` | Identificador de la cuenta.                                     |
 | `SUPABASE_ACCESS_TOKEN` | Acceso para vincular y verificar el proyecto.                   |
 | `SUPABASE_DB_PASSWORD`  | Contraseña de la base.                                          |
 | `SUPABASE_ANON_KEY`     | Clave `anon` o `sb_publishable_…`, nunca `service_role`.        |
 | `COOKIE_SECRET`         | Al menos 32 caracteres aleatorios; conservar entre despliegues. |
 
-Variables: `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `APP_ORIGIN`, `EMAIL_ENABLED`, `GOOGLE_ENABLED` y, opcionalmente, `TURNSTILE_SITE_KEY`. Los indicadores de acceso son `true`/`false`.
+Variables: `CLOUDFLARE_ACCOUNT_ID`, `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `APP_ORIGIN`, `EMAIL_ENABLED`, `GOOGLE_ENABLED` y, opcionalmente, `TURNSTILE_SITE_KEY`. Los indicadores de acceso son `true`/`false`.
 
 Ejecutar **Deploy customer MVP to Cloudflare Free** desde la revisión aprobada. Ejecuta las pruebas, aplica migraciones, comprueba Auth y permisos anónimos, y publica exclusivamente el cliente. Su artefacto `acceso-club` contiene el QR y enlace. Las claves se cargan con la misma versión del Worker y no aparecen en React.
 
