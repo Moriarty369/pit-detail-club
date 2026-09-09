@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
-import { rmSync } from "node:fs";
+import { randomBytes, createHmac } from "node:crypto";
+import { rmSync, readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 // Disposable CI database only. Never load production variables here.
 if (process.env.CI !== "true")
@@ -89,6 +89,34 @@ try {
   if (!denied.error)
     throw new Error(
       "Se permitió acceso administrativo sin segundo factor tras restaurar.",
+    );
+  const secret = readFileSync(".local/admin-test-factor.txt", "utf8");
+  let bits = "";
+  for (const char of secret.toUpperCase().replace(/=+$/, ""))
+    bits += "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+      .indexOf(char)
+      .toString(2)
+      .padStart(5, "0");
+  const factorKey = Buffer.from(bits.match(/.{8}/g).map((b) => parseInt(b, 2))),
+    time = Buffer.alloc(8);
+  time.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
+  const hash = createHmac("sha1", factorKey).update(time).digest(),
+    offset = hash[19] & 15;
+  const code = String(
+    (hash.readUInt32BE(offset) & 0x7fffffff) % 1000000,
+  ).padStart(6, "0");
+  const verified = await sb.auth.mfa.challengeAndVerify({
+    factorId: factors.data.totp.find((f) => f.status === "verified").id,
+    code,
+  });
+  if (verified.error)
+    throw new Error(
+      "El autenticador restaurado no permite completar el acceso.",
+    );
+  const allowed = await sb.rpc("pit_admin_customers", { p_search: "" });
+  if (allowed.error || !allowed.data.length)
+    throw new Error(
+      "El administrador restaurado no puede consultar los clientes con segundo factor.",
     );
   console.log(
     "Restauración verificada: identidades, 2FA, servicios, puntos, canjes, auditoría y permisos.",
