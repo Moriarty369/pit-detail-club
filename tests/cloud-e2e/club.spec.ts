@@ -4,6 +4,14 @@ import { createHmac, randomUUID } from "node:crypto";
 const config = JSON.parse(
   readFileSync(".local/cloud-test-config.json", "utf8"),
 );
+test.beforeEach(async ({ page }, info) => {
+  // Independent local test clients must not consume one shared IP's login budget.
+  // On Cloudflare this header is supplied by its edge, not by the browser.
+  const address =
+    (info.project.name === "chromium" ? 10 : 20) +
+    (info.title.startsWith("registro") ? 1 : 2);
+  await page.setExtraHTTPHeaders({ "CF-Connecting-IP": `192.0.2.${address}` });
+});
 function totp(secret: string) {
   let bits = "";
   for (const char of secret.toUpperCase().replace(/=+$/, ""))
@@ -242,7 +250,11 @@ test("recuperación de contraseña utiliza correo, permite el nuevo acceso y rev
       .getByRole("button", { name: "He olvidado mi contraseña" })
       .click();
     await page.getByLabel("Correo electrónico").fill(email);
+    const recoveryResponse = page.waitForResponse((r) =>
+      r.url().endsWith("/api/auth/forgot"),
+    );
     await page.getByRole("button", { name: "Enviar enlace" }).click();
+    expect((await recoveryResponse).status()).toBe(202);
     await expect(page.getByRole("status")).toContainText("recuperar");
     await page.goto(await mailLink(page, email));
     await expect(
