@@ -21,8 +21,8 @@ import {
   factorInput,
   email,
   password,
-  type SessionInfo,
-} from "../shared/contracts";
+} from "../shared/validation";
+import type { SessionInfo } from "../shared/contracts";
 export type Bindings = {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
@@ -250,17 +250,15 @@ export function createApp() {
     const data = await input(c, registerInput);
     if (c.env.TURNSTILE_SITE_KEY && !data.captchaToken)
       fail(400, "Completa la comprobación de acceso.");
-    const result = await c
-      .get("sb")
-      .auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: { full_name: data.name, marketing: data.marketing },
-          captchaToken: data.captchaToken,
-          emailRedirectTo: c.env.APP_ORIGIN + "/api/auth/callback",
-        },
-      });
+    const result = await c.get("sb").auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: { full_name: data.name, marketing: data.marketing },
+        captchaToken: data.captchaToken,
+        emailRedirectTo: c.env.APP_ORIGIN + "/api/auth/callback",
+      },
+    });
     check(result);
     // A configured production project must require email confirmation.
     if (result.data.session) {
@@ -270,7 +268,7 @@ export function createApp() {
     return c.json(
       {
         message:
-          "Si el correo puede registrarse, recibirás un enlace de verificación. Revisa también la carpeta de spam.",
+          "Si el correo puede registrarse, recibirás un enlace de verificación. Revisa también la carpeta de spam y abre el enlace en este navegador.",
       },
       202,
     );
@@ -279,15 +277,13 @@ export function createApp() {
     if (c.env.GOOGLE_ENABLED !== "true")
       fail(404, "Acceso con Google no disponible.");
     await input(c, z.object({}).strict());
-    const result = await c
-      .get("sb")
-      .auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: c.env.APP_ORIGIN + "/api/auth/callback",
-          skipBrowserRedirect: true,
-        },
-      });
+    const result = await c.get("sb").auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: c.env.APP_ORIGIN + "/api/auth/callback",
+        skipBrowserRedirect: true,
+      },
+    });
     check(result);
     return c.json({ url: result.data.url });
   });
@@ -314,17 +310,15 @@ export function createApp() {
     );
     if (c.env.TURNSTILE_SITE_KEY && !data.captchaToken)
       fail(400, "Completa la comprobación de acceso.");
-    const result = await c
-      .get("sb")
-      .auth.resetPasswordForEmail(data.email, {
-        captchaToken: data.captchaToken,
-        redirectTo: c.env.APP_ORIGIN + "/api/auth/recovery",
-      });
+    const result = await c.get("sb").auth.resetPasswordForEmail(data.email, {
+      captchaToken: data.captchaToken,
+      redirectTo: c.env.APP_ORIGIN + "/api/auth/recovery",
+    });
     if (result.error?.status === 429) check(result);
     return c.json(
       {
         message:
-          "Si la cuenta existe, recibirás un enlace para recuperar el acceso.",
+          "Si la cuenta existe, recibirás un enlace para recuperar el acceso. Ábrelo en este navegador.",
       },
       202,
     );
@@ -471,12 +465,10 @@ export function createApp() {
   app.patch("/api/me", async (c) => {
     if (c.env.PORTAL !== "customer") fail(404, "Ruta no encontrada.");
     const data = await input(c, profileInput);
-    const r = await c
-      .get("sb")
-      .rpc("pit_update_profile", {
-        p_name: data.name,
-        p_marketing: data.marketing,
-      });
+    const r = await c.get("sb").rpc("pit_update_profile", {
+      p_name: data.name,
+      p_marketing: data.marketing,
+    });
     check(r);
     return c.json(r.data);
   });
@@ -510,11 +502,9 @@ export function createApp() {
     await next();
   });
   app.get("/api/admin/customers", async (c) => {
-    const r = await c
-      .get("sb")
-      .rpc("pit_admin_customers", {
-        p_search: (c.req.query("search") || "").slice(0, 120),
-      });
+    const r = await c.get("sb").rpc("pit_admin_customers", {
+      p_search: (c.req.query("search") || "").slice(0, 120),
+    });
     check(r);
     return c.json(r.data);
   });
@@ -526,16 +516,14 @@ export function createApp() {
   });
   app.post("/api/admin/services", async (c) => {
     const d = await input(c, serviceInput);
-    const r = await c
-      .get("sb")
-      .rpc("pit_add_service", {
-        p_id: d.id,
-        p_customer: d.customerId,
-        p_vehicle: d.vehicleId,
-        p_service: d.service,
-        p_cents: d.cents,
-        p_mode: d.mode,
-      });
+    const r = await c.get("sb").rpc("pit_add_service", {
+      p_id: d.id,
+      p_customer: d.customerId,
+      p_vehicle: d.vehicleId,
+      p_service: d.service,
+      p_cents: d.cents,
+      p_mode: d.mode,
+    });
     check(r);
     return c.json(r.data);
   });
@@ -562,13 +550,11 @@ export function createApp() {
         })
         .strict(),
     );
-    const r = await c
-      .get("sb")
-      .rpc("pit_redeem", {
-        p_customer: d.customerId,
-        p_code: d.code,
-        p_conditions: d.conditionsConfirmed,
-      });
+    const r = await c.get("sb").rpc("pit_redeem", {
+      p_customer: d.customerId,
+      p_code: d.code,
+      p_conditions: d.conditionsConfirmed,
+    });
     check(r);
     return c.json(r.data);
   });
@@ -586,12 +572,10 @@ export function createApp() {
   });
   app.patch("/api/admin/rules", async (c) => {
     const d = await input(c, rulesInput);
-    const r = await c
-      .get("sb")
-      .rpc("pit_update_rules", {
-        p_threshold: d.thresholdCents,
-        p_percent: d.rappelPercent,
-      });
+    const r = await c.get("sb").rpc("pit_update_rules", {
+      p_threshold: d.thresholdCents,
+      p_percent: d.rappelPercent,
+    });
     check(r);
     return c.json(r.data);
   });

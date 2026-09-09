@@ -1,11 +1,6 @@
 import { test, expect } from "vitest";
-import {
-  centsFromInput,
-  serviceInput,
-  registerInput,
-  canRequest,
-  type Member,
-} from "../shared/contracts";
+import { centsFromInput, canRequest, type Member } from "../shared/contracts";
+import { serviceInput, registerInput } from "../shared/validation";
 test("money conversion preserves cents and rejects scientific, fractional and negative input", () => {
   expect(centsFromInput("5.01")).toBe(501);
   expect(centsFromInput("250")).toBe(25000);

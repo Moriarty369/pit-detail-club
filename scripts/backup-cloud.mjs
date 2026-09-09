@@ -145,7 +145,6 @@ async function main() {
       const sqlFile = join(directory, "restore.sql");
       run("pg_restore", [
         "--data-only",
-        "--disable-triggers",
         "--no-owner",
         "--no-privileges",
         "--file=" + sqlFile,
@@ -159,15 +158,21 @@ async function main() {
             "-v",
             "ON_ERROR_STOP=1",
             "--single-transaction",
+            "--set=VERBOSITY=sqlstate",
             "--command",
-            "delete from public.club_rules;",
+            "set session_replication_role = replica; delete from public.club_rules;",
             "--file",
             sqlFile,
           ],
           { stdio: ["ignore", "pipe", "pipe"] },
         );
-      } catch {
-        throw new Error("La restauración falló y se revirtió la transacción.");
+      } catch (error) {
+        const code =
+          String(error.stderr || "").match(/ERROR:\s+([A-Z0-9]{5})/)?.[1] ||
+          "desconocido";
+        throw new Error(
+          `La restauración falló (SQLSTATE ${code}) y se revirtió la transacción.`,
+        );
       }
       console.log(
         "Datos restaurados en la base local. Valida acceso, 2FA, saldos e historial antes de una recuperación real.",

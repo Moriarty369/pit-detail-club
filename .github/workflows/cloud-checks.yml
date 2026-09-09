@@ -39,6 +39,7 @@ jobs:
       - name: Restore encrypted backup into an empty disposable database
         run: node scripts/test-cloud-restore.mjs
       - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
           name: cloud-interface
           path: test-results/cloud-client-*.png
