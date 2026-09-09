@@ -54,6 +54,10 @@ if (!response.ok)
     "No se pudo verificar la configuración de Auth del proyecto.",
   );
 const auth = await response.json();
+if (auth.disable_signup !== false)
+  throw new Error(
+    "El registro está cerrado en Supabase. Configura el proveedor de acceso y habilita el registro antes de publicar.",
+  );
 if (auth.site_url !== origin.origin)
   throw new Error("La Site URL de Supabase debe coincidir con APP_ORIGIN.");
 const redirects = String(auth.uri_allow_list || "")

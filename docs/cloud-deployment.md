@@ -33,6 +33,8 @@ Configurar Supabase Auth:
 
 `supabase/config.toml` configura las pruebas locales, no los proveedores del proyecto alojado. La publicación verifica los ajustes principales y aborta si no hay método de acceso habilitado. Hace falta comprobar también el recorrido con una cuenta real.
 
+Durante la preparación inicial, mantener el registro cerrado en Supabase. Tras configurar Google o SMTP y los orígenes definitivos, habilitarlo; el script de publicación comprueba también este ajuste. Los callbacks locales sirven para revisar la app desde el equipo autorizado y deben revisarse al preparar el acceso público.
+
 ## Publicación desde GitHub
 
 Crear el entorno `production` en el repositorio y configurar sus secretos mediante la interfaz segura:
