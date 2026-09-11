@@ -93,3 +93,60 @@ test("Google-only access remains usable when the provider cannot start", async (
   expect((button as HTMLButtonElement).disabled).toBe(false);
   expect(onSession).not.toHaveBeenCalled();
 });
+test.each(["client@icloud.com", "client@outlook.com"])(
+  "email registration accepts %s alongside Google and waits for confirmation",
+  async (email) => {
+    const onSession = vi.fn();
+    const fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 202,
+      json: async () => ({
+        message: "Revisa tu correo para confirmar el registro.",
+      }),
+    });
+    vi.stubGlobal("fetch", fetch);
+    render(
+      <Login
+        config={{
+          portal: "customer",
+          emailEnabled: true,
+          googleEnabled: true,
+          captchaSiteKey: null,
+        }}
+        onSession={onSession}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /Continuar con Google/ }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Registrarse" }));
+    fireEvent.change(screen.getByLabelText("Nombre"), {
+      target: { value: "Cliente PIT" },
+    });
+    fireEvent.change(screen.getByLabelText("Correo electrónico"), {
+      target: { value: email },
+    });
+    fireEvent.change(screen.getByLabelText("Contraseña"), {
+      target: { value: "Long-test-password-2026!" },
+    });
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Crear cuenta" }).closest("form")!,
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toContain("confirmar"),
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/auth/register",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password: "Long-test-password-2026!",
+          name: "Cliente PIT",
+          marketing: false,
+        }),
+      }),
+    );
+    expect(onSession).not.toHaveBeenCalled();
+  },
+);

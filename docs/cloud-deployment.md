@@ -20,7 +20,7 @@ Fuentes oficiales, revisadas el 9 de septiembre de 2026: [Workers](https://devel
 - Cliente publicado en `https://pit-detail-club.pit-detail.workers.dev` desde la revisión `592ccf5`. Versión inicial del Worker: `97bd6804-61dd-4108-98bd-d2f8bbf9aec1`.
 - Site URL y callbacks de Supabase configurados para ese origen y para los dos portales locales.
 - Secretos de Supabase y sesión guardados en el entorno `production` de GitHub con autorización del propietario. Variables de proyecto, cuenta Cloudflare y origen configuradas.
-- Google OAuth configurado en Supabase, registro habilitado y acceso por correo/contraseña desactivado. El secreto de Google permanece en Supabase; los indicadores de despliegue y de los portales locales están actualizados.
+- Google OAuth configurado y registro por correo preparado con Gmail SMTP. La configuración para ambos métodos usa `GOOGLE_ENABLED=true` y `EMAIL_ENABLED=true`. Confirmación de correo obligatoria, contraseña mínima de 12 caracteres y TOTP disponible. Los secretos de Google y SMTP permanecen en Supabase.
 - Comprobados el endpoint de configuración, rechazo de sesión anónima, inicio OAuth con cookie HttpOnly y redirección a Google. Pantalla móvil revisada en Chromium, sin errores JavaScript ni desbordamiento horizontal. QR disponible en `dist-cloud/qr-club.png` y enlace en `dist-cloud/enlace-club.txt`.
 - Pendiente completar el inicio de sesión con una cuenta Google real y comprobar TOTP antes de sustituir el enlace anterior. La automatización de GitHub requiere además su token de despliegue de Cloudflare; la primera publicación utilizó la sesión OAuth local autorizada.
 - El enlace y QR de GitHub Pages siguen abriendo la beta anterior.
@@ -38,7 +38,7 @@ Configurar Supabase Auth:
 
 - Site URL: `APP_ORIGIN`. Redirect URLs exactas: `APP_ORIGIN/api/auth/callback` y `APP_ORIGIN/api/auth/recovery`. Añadir las del administrador cuando se defina su acceso privado.
 - Contraseña mínima de 12 caracteres, confirmación de correo obligatoria, rotación de refresh tokens y registro/verificación TOTP habilitados. JWT de 15 minutos recomendado.
-- Correo: configurar SMTP de un dominio verificado y probar confirmación/recuperación con una cuenta ajena al equipo del proyecto. El SMTP de demostración de Supabase no sirve para clientes.
+- Correo: configurar SMTP y probar confirmación/recuperación con una cuenta ajena al equipo del proyecto. El piloto admite Gmail SMTP; para ampliar el servicio, usar un proveedor de correo transaccional con dominio verificado. El SMTP de demostración de Supabase no sirve para clientes.
 - Google: configurar proveedor, credenciales y callback de Supabase en Google Cloud. [Guía oficial](https://supabase.com/docs/guides/auth/social-login/auth-google). El secreto OAuth permanece en Supabase.
 - Si se habilita CAPTCHA, configurar Turnstile en Supabase y la clave pública en `TURNSTILE_SITE_KEY`; la privada permanece en Supabase.
 
@@ -62,9 +62,23 @@ Crear un cliente OAuth de tipo **Aplicación web** con:
 
 Descargar el JSON del cliente y tratarlo como credencial privada; no añadirlo al repositorio ni pegarlo en comentarios. Su `client_id` y `client_secret` se configuran en el proveedor Google del proyecto Supabase. No se necesita el secreto Google en React, Cloudflare ni GitHub.
 
-Una vez configurado, verificar el proveedor, habilitar el registro en Supabase y establecer `GOOGLE_ENABLED=true`, `EMAIL_ENABLED=false` en el entorno de despliegue y en los portales locales. Publicar el cliente y comprobar con una cuenta real la vuelta desde Google, el alta con 2.000 puntos, el cierre de sesión y TOTP. Volver a entrar debe conservar el mismo movimiento de bienvenida. Las pruebas automatizadas cubren los controles del flujo OAuth; no sustituyen esta comprobación del proveedor real.
+Para una instalación solo con Google, verificar el proveedor, habilitar el registro en Supabase y establecer `GOOGLE_ENABLED=true`, `EMAIL_ENABLED=false`. El piloto actual añade SMTP y usa ambos indicadores en `true`. Publicar el cliente y comprobar con una cuenta real la vuelta desde Google, el alta con 2.000 puntos, el cierre de sesión y TOTP. Volver a entrar debe conservar el mismo movimiento de bienvenida. Las pruebas automatizadas cubren los controles del flujo OAuth; no sustituyen esta comprobación del proveedor real.
 
 ## Publicación desde GitHub
+
+### Correo del piloto sin dominio propio
+
+El Gmail dedicado del negocio envía las verificaciones mediante `smtp.gmail.com`, puerto `587` con STARTTLS. El remitente y el usuario SMTP son esa misma cuenta. La contraseña es una contraseña de aplicación de Google, disponible tras activar su verificación en dos pasos; no se utiliza la contraseña principal del buzón. La clave se configura únicamente en Supabase, no en React, Cloudflare ni GitHub.
+
+Mantener `external_email_enabled=true` y `mailer_autoconfirm=false`. Establecer `EMAIL_ENABLED=true` y conservar `GOOGLE_ENABLED=true` en el entorno de despliegue y los portales locales. El formulario acepta direcciones de cualquier proveedor, incluido iCloud y Outlook; el servidor de envío no restringe el dominio del cliente. El segundo factor de los clientes sigue siendo TOTP opcional, distinto de confirmar el correo al registrarse.
+
+Las plantillas en `supabase/templates/confirmation.html` y `supabase/templates/recovery.html` se configuran mediante los campos `mailer_templates_confirmation_content` y `mailer_templates_recovery_content` de Supabase Auth. Usan `{{ .ConfirmationURL }}` para conservar PKCE. Probar los enlaces en el navegador donde se inició cada solicitud; no insertar enlaces de seguimiento ni publicidad en estos mensajes.
+
+Gmail limita los envíos y puede bloquearlos temporalmente. Esta opción es para el piloto de bajo volumen; vigilar el consumo y la entrega antes de abrir a más clientes. Cambiar la contraseña de Google revoca sus contraseñas de aplicación y requiere actualizar Supabase. [Gmail SMTP con Supabase](https://supabase.com/docs/guides/troubleshooting/using-google-smtp-with-supabase-custom-smtp-ZZzU4Y), [límites de Gmail](https://support.google.com/mail/answer/22839), [contraseñas de aplicación](https://support.google.com/accounts/answer/185833).
+
+La autenticación SMTP se verifica sin enviar mensajes. La entrega real y el registro completo quedan sujetos a la prueba del propietario con su correo externo; no confundir una conexión SMTP aceptada con una confirmación recibida.
+
+### Configuración del workflow
 
 Crear el entorno `production` en el repositorio y configurar sus secretos mediante la interfaz segura:
 
