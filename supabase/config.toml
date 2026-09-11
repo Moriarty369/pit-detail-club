@@ -34,6 +34,12 @@ double_confirm_changes = true
 enable_confirmations = true
 secure_password_change = false
 max_frequency = "1s"
+[auth.email.template.confirmation]
+subject = "Confirma tu correo · PIT DETAIL Club"
+content_path = "./supabase/templates/confirmation.html"
+[auth.email.template.recovery]
+subject = "Recupera tu acceso · PIT DETAIL Club"
+content_path = "./supabase/templates/recovery.html"
 [auth.mfa]
 max_enrolled_factors = 5
 [auth.mfa.totp]

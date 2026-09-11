@@ -2,7 +2,7 @@
 
 Aplicación de fidelización para detailing, mecánica básica y cambio de aceite en Venezuela. Conserva el diseño de la beta, con tarjeta de puntos, promociones, rappel y vehículos del cliente: autos, motos y embarcaciones.
 
-La versión conectada usa **React + TypeScript + Vite**, una API **Hono en Cloudflare Workers** y **PostgreSQL + Supabase Auth**. El [piloto cliente](https://pit-detail-club.pit-detail.workers.dev) está publicado con acceso Google en los planes gratuitos.
+La versión conectada usa **React + TypeScript + Vite**, una API **Hono en Cloudflare Workers** y **PostgreSQL + Supabase Auth**. El [piloto cliente](https://pit-detail-club.pit-detail.workers.dev) permite acceso con Google y registro por correo con contraseña y confirmación, en los planes gratuitos. El piloto usa Gmail SMTP para las verificaciones; su capacidad de envío es limitada.
 
 | Componente                   | Ubicación                          | Responsabilidad                                                                         |
 | ---------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------- |

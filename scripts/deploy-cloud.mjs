@@ -66,9 +66,17 @@ const redirects = String(auth.uri_allow_list || "")
 for (const path of ["/api/auth/callback", "/api/auth/recovery"])
   if (!redirects.includes(origin.origin + path))
     throw new Error(`Añade el redirect exacto ${path} en Supabase Auth.`);
-if (email && (auth.mailer_autoconfirm !== false || !auth.smtp_host))
+if (
+  email &&
+  (auth.external_email_enabled !== true ||
+    auth.mailer_autoconfirm !== false ||
+    auth.mailer_allow_unverified_email_sign_ins === true ||
+    !auth.smtp_host ||
+    !auth.smtp_admin_email ||
+    !auth.smtp_user)
+)
   throw new Error(
-    "El acceso por correo necesita confirmación obligatoria y SMTP propio configurado.",
+    "El acceso por correo necesita el proveedor habilitado, confirmación obligatoria y SMTP configurado con remitente y usuario.",
   );
 if (google && !auth.external_google_enabled)
   throw new Error("Activa el proveedor Google en Supabase antes de publicar.");
