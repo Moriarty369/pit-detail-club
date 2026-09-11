@@ -14,13 +14,15 @@ Fuentes oficiales, revisadas el 9 de septiembre de 2026: [Workers](https://devel
 
 ## Cuentas y autenticación
 
-### Preparación realizada (9 de septiembre de 2026)
+### Estado del piloto (11 de septiembre de 2026)
 
 - Proyecto Supabase Free `pit-detail-club` creado, migración aplicada y permisos anónimos comprobados.
-- Cloudflare conectado y subdominio `pit-detail.workers.dev` reservado. Origen previsto: `https://pit-detail-club.pit-detail.workers.dev`; todavía no hay un Worker publicado.
+- Cliente publicado en `https://pit-detail-club.pit-detail.workers.dev` desde la revisión `592ccf5`. Versión inicial del Worker: `97bd6804-61dd-4108-98bd-d2f8bbf9aec1`.
 - Site URL y callbacks de Supabase configurados para ese origen y para los dos portales locales.
 - Secretos de Supabase y sesión guardados en el entorno `production` de GitHub con autorización del propietario. Variables de proyecto, cuenta Cloudflare y origen configuradas.
-- Pendiente configurar Google OAuth o SMTP y probar el acceso real antes de abrir el registro y publicar. La automatización de GitHub requiere además su token de despliegue de Cloudflare; la sesión OAuth local permite publicar desde el equipo autorizado.
+- Google OAuth configurado en Supabase, registro habilitado y acceso por correo/contraseña desactivado. El secreto de Google permanece en Supabase; los indicadores de despliegue y de los portales locales están actualizados.
+- Comprobados el endpoint de configuración, rechazo de sesión anónima, inicio OAuth con cookie HttpOnly y redirección a Google. Pantalla móvil revisada en Chromium, sin errores JavaScript ni desbordamiento horizontal. QR disponible en `dist-cloud/qr-club.png` y enlace en `dist-cloud/enlace-club.txt`.
+- Pendiente completar el inicio de sesión con una cuenta Google real y comprobar TOTP antes de sustituir el enlace anterior. La automatización de GitHub requiere además su token de despliegue de Cloudflare; la primera publicación utilizó la sesión OAuth local autorizada.
 - El enlace y QR de GitHub Pages siguen abriendo la beta anterior.
 
 Conectar las cuentas del negocio sin compartir contraseñas por chat:

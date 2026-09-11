@@ -116,8 +116,19 @@ try {
   if (process.env.TURNSTILE_SITE_KEY)
     args.push("--var", `TURNSTILE_SITE_KEY:${process.env.TURNSTILE_SITE_KEY}`);
   execFileSync("npx", args, { stdio: "inherit" });
-  const health = await fetch(origin.origin + "/api/health");
-  if (!health.ok || !(await health.json()).ready)
+  // A newly created workers.dev route can take a few seconds to become available.
+  let ready = false;
+  for (let attempt = 0; attempt < 12; attempt++) {
+    try {
+      const health = await fetch(origin.origin + "/api/health", {
+        signal: AbortSignal.timeout(10000),
+      });
+      ready = health.ok && (await health.json()).ready === true;
+    } catch {}
+    if (ready) break;
+    if (attempt < 11) await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+  if (!ready)
     throw new Error(
       "El despliegue no pasó la comprobación de configuración. Conserva el enlace anterior.",
     );
