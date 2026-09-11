@@ -1,0 +1,51 @@
+name: Verify connected MVP
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm test
+      - run: npm run test:server
+      - run: npm run verify:cloud
+      - name: Confirm customer artifact contains no administrative interface
+        run: node scripts/check-customer-build.js dist-cloud
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Start disposable PostgreSQL, Auth and email inbox
+        run: npx supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      - name: Install PostgreSQL 17 backup tools
+        run: |
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      - run: node scripts/prepare-cloud-tests.mjs
+      - name: Exercise real Auth, TOTP, database, API and browser
+        run: npm run test:cloud:e2e
+      - name: Restore encrypted backup into an empty disposable database
+        run: node scripts/test-cloud-restore.mjs
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: cloud-interface
+          path: test-results/cloud-client-*.png
+          retention-days: 7
+      - name: Shut down test database
+        if: always()
+        run: npx supabase stop --no-backup
+      # Traces contain test-only TOTP secrets. Keep them private to the runner;
+      # do not upload them as artifacts of this public repository.
