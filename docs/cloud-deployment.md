@@ -48,7 +48,7 @@ Durante la preparación inicial, mantener el registro cerrado en Supabase. Tras 
 
 ### Google para el piloto
 
-El propietario ha elegido Google como primer método de acceso. El botón existente sirve tanto para crear la cuenta como para volver a entrar; los puntos se asignan únicamente al registrar servicios desde administración.
+El propietario ha elegido Google como primer método de acceso. El botón existente sirve tanto para crear la cuenta como para volver a entrar. Las cuentas nuevas reciben 2.000 puntos de bienvenida una sola vez; después suman puntos por servicios registrados desde administración.
 
 En [Google Auth Platform](https://console.cloud.google.com/auth/overview), crear o seleccionar el proyecto del negocio y configurar el nombre `PIT DETAIL Club`, correo de soporte del propietario y público externo. Para el piloto en modo de pruebas, añadir las cuentas Google de los participantes en Audience. Limitar los permisos a `openid`, `userinfo.email` y `userinfo.profile`.
 
@@ -62,7 +62,7 @@ Crear un cliente OAuth de tipo **Aplicación web** con:
 
 Descargar el JSON del cliente y tratarlo como credencial privada; no añadirlo al repositorio ni pegarlo en comentarios. Su `client_id` y `client_secret` se configuran en el proveedor Google del proyecto Supabase. No se necesita el secreto Google en React, Cloudflare ni GitHub.
 
-Una vez configurado, verificar el proveedor, habilitar el registro en Supabase y establecer `GOOGLE_ENABLED=true`, `EMAIL_ENABLED=false` en el entorno de despliegue y en los portales locales. Publicar el cliente y comprobar con una cuenta real la vuelta desde Google, el alta con saldo cero, el cierre de sesión y TOTP. Las pruebas automatizadas cubren los controles del flujo OAuth; no sustituyen esta comprobación del proveedor real.
+Una vez configurado, verificar el proveedor, habilitar el registro en Supabase y establecer `GOOGLE_ENABLED=true`, `EMAIL_ENABLED=false` en el entorno de despliegue y en los portales locales. Publicar el cliente y comprobar con una cuenta real la vuelta desde Google, el alta con 2.000 puntos, el cierre de sesión y TOTP. Volver a entrar debe conservar el mismo movimiento de bienvenida. Las pruebas automatizadas cubren los controles del flujo OAuth; no sustituyen esta comprobación del proveedor real.
 
 ## Publicación desde GitHub
 
@@ -78,7 +78,7 @@ Crear el entorno `production` en el repositorio y configurar sus secretos median
 
 Variables: `CLOUDFLARE_ACCOUNT_ID`, `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `APP_ORIGIN`, `EMAIL_ENABLED`, `GOOGLE_ENABLED` y, opcionalmente, `TURNSTILE_SITE_KEY`. Los indicadores de acceso son `true`/`false`.
 
-Ejecutar **Deploy customer MVP to Cloudflare Free** desde la revisión aprobada. Ejecuta las pruebas, aplica migraciones, comprueba Auth y permisos anónimos, y publica exclusivamente el cliente. Su artefacto `acceso-club` contiene el QR y enlace. Las claves se cargan con la misma versión del Worker y no aparecen en React.
+Ejecutar **Deploy customer MVP to Cloudflare Free** desde `main`, después de integrar la revisión probada de `develop`. El trabajo de publicación no se ejecuta para otras ramas. Ejecuta las pruebas, aplica migraciones, comprueba Auth y permisos anónimos, y publica exclusivamente el cliente. Su artefacto `acceso-club` contiene el QR y enlace. Las claves se cargan con la misma versión del Worker y no aparecen en React.
 
 Comprobar registro/acceso, correo si está habilitado, TOTP, saldo, servicio y canje. Medir errores y CPU. Entonces cambiar GitHub Pages para redirigir al origen nuevo y conservar el QR existente. Ese cambio queda pendiente del despliegue real.
 

@@ -2,7 +2,7 @@
 
 Aplicación de fidelización para detailing, mecánica básica y cambio de aceite en Venezuela. Conserva el diseño de la beta, con tarjeta de puntos, promociones, rappel y vehículos del cliente: autos, motos y embarcaciones.
 
-La versión conectada usa **React + TypeScript + Vite**, una API **Hono en Cloudflare Workers** y **PostgreSQL + Supabase Auth**. Está preparada para los planes gratuitos. La publicación necesita conectar las cuentas del negocio y configurar un proveedor de acceso.
+La versión conectada usa **React + TypeScript + Vite**, una API **Hono en Cloudflare Workers** y **PostgreSQL + Supabase Auth**. El [piloto cliente](https://pit-detail-club.pit-detail.workers.dev) está publicado con acceso Google en los planes gratuitos.
 
 | Componente                   | Ubicación                          | Responsabilidad                                                                         |
 | ---------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------- |
@@ -23,7 +23,9 @@ flowchart LR
   Admin --> DB
 ```
 
-La cuenta nueva empieza en cero. Solo un servicio registrado por administración genera puntos: **$1 = 1.000 puntos**, con importes de $5 a $250. El saldo no se importa de la demo ni se acepta desde el navegador. Cada servicio tiene una referencia para evitar duplicados; las anulaciones compensan el movimiento original y quedan auditadas. Si sus puntos ya se gastaron, la anulación se rechaza para no crear saldo negativo.
+Cada cuenta nueva recibe **2.000 puntos de bienvenida una sola vez**. La base registra el movimiento y su auditoría en la misma transacción que crea el perfil; volver a iniciar sesión no genera más puntos. Se aplica desde la migración de bienvenida y no añade créditos retroactivos a cuentas existentes. El regalo aparece en el historial, no es un servicio y no cuenta para el gasto trimestral del rappel.
+
+Los servicios registrados por administración generan **$1 = 1.000 puntos**, con importes de $5 a $250. El saldo no se importa de la demo ni se acepta desde el navegador. Cada servicio tiene una referencia para evitar duplicados; las anulaciones compensan el movimiento original y quedan auditadas. Si sus puntos ya se gastaron, la anulación se rechaza para no crear saldo negativo.
 
 Los códigos de canje caducan a los cinco minutos; el descuento de puntos ocurre al confirmarlos el administrador. El rappel usa el trimestre de Caracas y se valida nuevamente al canjear. Varios vehículos pueden pertenecer a una cuenta; todavía no hay saldos compartidos entre cuentas de una flota.
 
@@ -49,6 +51,8 @@ La preparación crea únicamente cuentas ficticias en Supabase local y archivos 
 El workflow `cloud-checks.yml` ejecuta pruebas unitarias, integración PostgreSQL, recorridos reales de navegador y una copia cifrada seguida de restauración sobre una base vacía. Solo publica capturas de la interfaz con datos de prueba; nunca trazas con factores de acceso.
 
 ## Publicar el piloto
+
+Crear las ramas `feat/*` y `fix/*` desde `develop`. Integrarlas mediante PR después de pasar las pruebas; promover una revisión probada a `main` para publicarla. El workflow de producción solo permite desplegar desde `main`. Mientras no se configure su token Cloudflare en GitHub, el despliegue se realiza desde el equipo autorizado, con `main` limpio y actualizado.
 
 Seguir [la guía de despliegue gratuito y operación](docs/cloud-deployment.md). El workflow manual `cloud-deploy.yml` vuelve a ejecutar las pruebas, aplica migraciones, comprueba la configuración de acceso y publica exclusivamente el portal cliente. Genera un PNG con el QR y un archivo con el enlace.
 
