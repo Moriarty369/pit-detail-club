@@ -17,12 +17,13 @@ Fuentes oficiales, revisadas el 9 de septiembre de 2026: [Workers](https://devel
 ### Estado del piloto (11 de septiembre de 2026)
 
 - Proyecto Supabase Free `pit-detail-club` creado, migración aplicada y permisos anónimos comprobados.
-- Dirección del cliente: `https://club.pit-detail.workers.dev`, Worker `club`. El Worker anterior `pit-detail-club` se conserva durante la transición; ambos utilizan el mismo proyecto y los mismos saldos. No se transfieren cookies entre dominios: en el enlace nuevo se debe iniciar sesión con la cuenta existente.
+- Dirección del cliente: `https://club.pit-detail.workers.dev`, Worker `club`. El Worker anterior `pit-detail-club` está eliminado, sin redirección. Se han retirado sus callbacks de Supabase; la base de datos y los saldos se conservan.
 - Site URL y callbacks de Supabase configurados para ese origen y para los dos portales locales.
 - Secretos de Supabase y sesión guardados en el entorno `production` de GitHub con autorización del propietario. Variables de proyecto, cuenta Cloudflare y origen configuradas.
 - Google OAuth configurado y registro por correo preparado con Gmail SMTP. La configuración para ambos métodos usa `GOOGLE_ENABLED=true` y `EMAIL_ENABLED=true`. Confirmación de correo obligatoria, contraseña mínima de 12 caracteres y TOTP disponible. Los secretos de Google y SMTP permanecen en Supabase.
 - Comprobados el endpoint de configuración, rechazo de sesión anónima, inicio OAuth con cookie HttpOnly y redirección a Google. Pantalla móvil revisada en Chromium, sin errores JavaScript ni desbordamiento horizontal. QR disponible en `dist-cloud/qr-club.png` y enlace en `dist-cloud/enlace-club.txt`.
-- Pendiente completar el inicio de sesión con una cuenta Google real y comprobar TOTP antes de sustituir el enlace anterior. La automatización de GitHub requiere además su token de despliegue de Cloudflare; la primera publicación utilizó la sesión OAuth local autorizada.
+- Pendiente completar el inicio de sesión con una cuenta Google real y comprobar TOTP antes de sustituir el enlace de GitHub Pages. La automatización de GitHub requiere además su token de despliegue de Cloudflare; la primera publicación utilizó la sesión OAuth local autorizada.
+- Verificación del nombre y logo en Google aplazada: [pendiente #5](https://github.com/Moriarty369/pit-detail-club/issues/5).
 - El enlace y QR de GitHub Pages siguen abriendo la beta anterior.
 
 Conectar las cuentas del negocio sin compartir contraseñas por chat:
@@ -57,7 +58,7 @@ Crear un cliente OAuth de tipo **Aplicación web** con:
 | Campo | Valor |
 | --- | --- |
 | Nombre | `PIT DETAIL Club` |
-| Origen JavaScript | `https://pit-detail-club.pit-detail.workers.dev` |
+| Origen JavaScript | `https://club.pit-detail.workers.dev` |
 | URI de redirección | `https://tbudcwwvkfdeziukmydq.supabase.co/auth/v1/callback` |
 
 Descargar el JSON del cliente y tratarlo como credencial privada; no añadirlo al repositorio ni pegarlo en comentarios. Su `client_id` y `client_secret` se configuran en el proveedor Google del proyecto Supabase. No se necesita el secreto Google en React, Cloudflare ni GitHub.
@@ -68,9 +69,9 @@ Para una instalación solo con Google, verificar el proveedor, habilitar el regi
 
 El subdominio gratuito de Cloudflare permite publicar el Worker `club` en `https://club.pit-detail.workers.dev`. Esto acorta la dirección de la app; no cambia la dirección del proveedor Supabase que aparece durante el consentimiento de Google. Un subdominio del proveedor no equivale a un dominio propio registrado.
 
-Para la transición, establecer la Site URL de Supabase y `APP_ORIGIN` del entorno `production` en el origen nuevo. Añadir sus dos callbacks exactos conservando los anteriores y los locales. Publicar el nuevo Worker con las mismas claves de proyecto y sesión. Mantener temporalmente el Worker anterior con su `APP_ORIGIN` original para que los enlaces, sesiones y verificaciones ya iniciadas sigan funcionando. No borrar usuarios, migrar puntos ni duplicar la base de datos. Antes de retirar el acceso anterior, comprobar el registro completo con una cuenta real en la dirección nueva.
+La Site URL de Supabase y `APP_ORIGIN` del entorno `production` apuntan a `https://club.pit-detail.workers.dev`. Se conservan sus dos callbacks exactos y los de los portales locales. El Worker anterior `pit-detail-club` y sus callbacks `https://pit-detail-club.pit-detail.workers.dev/api/auth/callback` y `/api/auth/recovery` se han eliminado. El enlace antiguo deja de servir la app; no se ha configurado una redirección. El proyecto Supabase sigue siendo el mismo y no se han borrado usuarios ni movimientos de puntos.
 
-El flujo actual inicia OAuth desde el servidor y mantiene el callback de Google en `https://tbudcwwvkfdeziukmydq.supabase.co/auth/v1/callback`; ese callback no cambia por acortar la dirección de la app. Al revisar el cliente web en Google, añadir también `https://club.pit-detail.workers.dev` a los orígenes JavaScript y conservar el anterior durante la transición.
+El flujo actual inicia OAuth desde el servidor y mantiene el callback de Google en `https://tbudcwwvkfdeziukmydq.supabase.co/auth/v1/callback`; ese callback no cambia al retirar el Worker antiguo. Al retomar la revisión manual del cliente web en Google, sustituir el origen JavaScript antiguo por `https://club.pit-detail.workers.dev`. Esa limpieza de la consola queda pendiente junto con la tarea #5; no forma parte del flujo OAuth del servidor.
 
 Para mostrar `PIT DETAIL Club` y su logo en el consentimiento, Google exige verificar y publicar la marca en **Google Auth Platform → Información de la marca**. Cambiar el nombre interno del proyecto o del cliente OAuth no lo resuelve. Preparar una página pública que describa el club, los enlaces de privacidad y condiciones, el correo del negocio y la comprobación de propiedad del sitio que solicite Google. La portada de verificación debe explicar la app y enlazar la privacidad; no puede consistir solamente en el formulario de acceso. La aprobación depende de Google y queda pendiente; no anunciar la marca como verificada antes de verla publicada.
 
