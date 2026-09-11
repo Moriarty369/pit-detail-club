@@ -823,6 +823,22 @@ function History({ member }: { member: Member }) {
           </p>
         )}
       </section>
+      {member.welcomeReward && (
+        <section className="recent-panel" aria-label="Recompensa de bienvenida">
+          <div className="service-row">
+            <span className="service-icon">
+              <Icon name="gift" />
+            </span>
+            <div className="service-info">
+              <strong>Bienvenida al club</strong>
+              <span>{date(member.welcomeReward.date)} · Recompensa única</span>
+            </div>
+            <div className="service-amount">
+              <strong>+{number(member.welcomeReward.points)} pts</strong>
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }

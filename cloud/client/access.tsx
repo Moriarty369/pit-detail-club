@@ -300,6 +300,12 @@ export function Login({
       )}
       <ErrorText error={error} />
       <p className="auth-note">
+        {!admin && (
+          <>
+            Recibe 2.000 puntos de bienvenida al crear tu cuenta, una sola
+            vez.{" "}
+          </>
+        )}
         Cada $1 en servicios elegibles suma 1.000 puntos. El negocio registra
         tus servicios y confirma los canjes.
       </p>

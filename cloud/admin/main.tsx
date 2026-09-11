@@ -351,6 +351,7 @@ function Admin({ logout }: { logout: () => Promise<void> }) {
                       "profile.update": "Perfil actualizado",
                       "vehicle.create": "Vehículo añadido",
                       "rules.update": "Reglas actualizadas",
+                      "welcome.granted": "Bienvenida: 2.000 puntos",
                     } as Record<string, string>
                   )[e.action] || e.action}
                 </strong>

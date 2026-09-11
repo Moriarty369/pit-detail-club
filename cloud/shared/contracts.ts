@@ -33,6 +33,7 @@ export type Member = {
     period: string;
   }[];
   points: number;
+  welcomeReward?: { points: number; date: string } | null;
   quarterSpend: number;
   period: string;
 };

@@ -85,7 +85,17 @@ test("registro con correo real local, 2FA, servicio y canje entre los dos portal
     "enlace de verificación",
   );
   await page.goto(await mailLink(page, email));
-  await expect(page.locator(".points-value")).toHaveText("0pts");
+  await expect(page.locator(".points-value")).toHaveText("2.000pts");
+  const welcomeMember = await (await page.request.get("/api/me")).json();
+  expect(welcomeMember.welcomeReward.points).toBe(2000);
+  expect(welcomeMember.entries).toEqual([]);
+  expect(welcomeMember.quarterSpend).toBe(0);
+  await page
+    .getByRole("button", { name: "Mis servicios", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Recompensa de bienvenida" }),
+  ).toContainText("+2.000 pts");
   await page.getByRole("button", { name: "Mi perfil", exact: true }).click();
   await page.getByLabel("Tipo de vehículo").selectOption("motorcycle");
   await page.getByLabel("Marca y modelo").fill("Yamaha de prueba");
@@ -110,7 +120,10 @@ test("registro con correo real local, 2FA, servicio y canje entre los dos portal
   const forbidden = await page.request.get("/api/me");
   expect(forbidden.status()).toBe(403);
   await confirmFactor(page, customerSecret);
-  await expect(page.locator(".points-value")).toHaveText("0pts");
+  await expect(page.locator(".points-value")).toHaveText("2.000pts");
+  expect(
+    (await (await page.request.get("/api/me")).json()).welcomeReward,
+  ).toEqual(welcomeMember.welcomeReward);
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
   });
@@ -153,7 +166,7 @@ test("registro con correo real local, 2FA, servicio y canje entre los dos portal
       "Servicio registrado",
     );
     await page.reload();
-    await expect(page.locator(".points-value")).toHaveText("250.000pts");
+    await expect(page.locator(".points-value")).toHaveText("252.000pts");
     await page.getByRole("button", { name: "Beneficios", exact: true }).click();
     await page
       .locator(".offer-card")
@@ -170,7 +183,7 @@ test("registro con correo real local, 2FA, servicio y canje entre los dos portal
     await expect(admin.getByRole("status")).toContainText("Canje validado");
     await page.goto("/#home");
     await page.reload();
-    await expect(page.locator(".points-value")).toHaveText("150.000pts");
+    await expect(page.locator(".points-value")).toHaveText("152.000pts");
     const member = await (await page.request.get("/api/me")).json();
     const entry = {
       id: randomUUID(),
@@ -193,7 +206,7 @@ test("registro con correo real local, 2FA, servicio y canje entre los dos portal
     ]);
     expect(duplicates.map((r) => r.status())).toEqual([200, 200]);
     expect((await (await page.request.get("/api/me")).json()).points).toBe(
-      155000,
+      157000,
     );
     const reversals = await Promise.all([
       admin.request.post(
@@ -207,7 +220,7 @@ test("registro con correo real local, 2FA, servicio y canje entre los dos portal
     ]);
     expect(reversals.map((r) => r.status())).toEqual([200, 200]);
     expect((await (await page.request.get("/api/me")).json()).points).toBe(
-      150000,
+      152000,
     );
     expect((await page.request.get("/api/admin/customers")).status()).toBe(404);
     expect(await page.evaluate(() => document.cookie)).not.toContain(
@@ -244,7 +257,7 @@ test("recuperación de contraseña utiliza correo, permite el nuevo acceso y rev
   try {
     await previousPage.goto("http://127.0.0.1:8787");
     await login(previousPage, email);
-    await expect(previousPage.locator(".points-value")).toHaveText("0pts");
+    await expect(previousPage.locator(".points-value")).toHaveText("2.000pts");
     await page.goto("/");
     await page
       .getByRole("button", { name: "He olvidado mi contraseña" })
@@ -277,7 +290,7 @@ test("recuperación de contraseña utiliza correo, permite el nuevo acceso y rev
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña", { exact: true }).fill(newPassword);
     await page.getByRole("button", { name: "Continuar", exact: true }).click();
-    await expect(page.locator(".points-value")).toHaveText("0pts");
+    await expect(page.locator(".points-value")).toHaveText("2.000pts");
   } finally {
     await previous.close();
   }
