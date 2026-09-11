@@ -17,7 +17,7 @@ Fuentes oficiales, revisadas el 9 de septiembre de 2026: [Workers](https://devel
 ### Estado del piloto (11 de septiembre de 2026)
 
 - Proyecto Supabase Free `pit-detail-club` creado, migración aplicada y permisos anónimos comprobados.
-- Cliente publicado en `https://pit-detail-club.pit-detail.workers.dev` desde la revisión `592ccf5`. Versión inicial del Worker: `97bd6804-61dd-4108-98bd-d2f8bbf9aec1`.
+- Dirección del cliente: `https://club.pit-detail.workers.dev`, Worker `club`. El Worker anterior `pit-detail-club` se conserva durante la transición; ambos utilizan el mismo proyecto y los mismos saldos. No se transfieren cookies entre dominios: en el enlace nuevo se debe iniciar sesión con la cuenta existente.
 - Site URL y callbacks de Supabase configurados para ese origen y para los dos portales locales.
 - Secretos de Supabase y sesión guardados en el entorno `production` de GitHub con autorización del propietario. Variables de proyecto, cuenta Cloudflare y origen configuradas.
 - Google OAuth configurado y registro por correo preparado con Gmail SMTP. La configuración para ambos métodos usa `GOOGLE_ENABLED=true` y `EMAIL_ENABLED=true`. Confirmación de correo obligatoria, contraseña mínima de 12 caracteres y TOTP disponible. Los secretos de Google y SMTP permanecen en Supabase.
@@ -32,7 +32,7 @@ npx wrangler login
 npx supabase login
 ```
 
-Crear un proyecto **Free** dedicado en Supabase, guardar su contraseña en el gestor del negocio y escoger la región disponible más cercana a los clientes. No importar saldos ficticios. Elegir el subdominio gratuito de Cloudflare: `https://pit-detail-club.SUBDOMINIO.workers.dev` será `APP_ORIGIN`, sin barra final.
+Crear un proyecto **Free** dedicado en Supabase, guardar su contraseña en el gestor del negocio y escoger la región disponible más cercana a los clientes. No importar saldos ficticios. Elegir el subdominio gratuito de Cloudflare: con el Worker `club`, `https://club.SUBDOMINIO.workers.dev` será `APP_ORIGIN`, sin barra final.
 
 Configurar Supabase Auth:
 
@@ -63,6 +63,18 @@ Crear un cliente OAuth de tipo **Aplicación web** con:
 Descargar el JSON del cliente y tratarlo como credencial privada; no añadirlo al repositorio ni pegarlo en comentarios. Su `client_id` y `client_secret` se configuran en el proveedor Google del proyecto Supabase. No se necesita el secreto Google en React, Cloudflare ni GitHub.
 
 Para una instalación solo con Google, verificar el proveedor, habilitar el registro en Supabase y establecer `GOOGLE_ENABLED=true`, `EMAIL_ENABLED=false`. El piloto actual añade SMTP y usa ambos indicadores en `true`. Publicar el cliente y comprobar con una cuenta real la vuelta desde Google, el alta con 2.000 puntos, el cierre de sesión y TOTP. Volver a entrar debe conservar el mismo movimiento de bienvenida. Las pruebas automatizadas cubren los controles del flujo OAuth; no sustituyen esta comprobación del proveedor real.
+
+### Dirección corta y marca en Google
+
+El subdominio gratuito de Cloudflare permite publicar el Worker `club` en `https://club.pit-detail.workers.dev`. Esto acorta la dirección de la app; no cambia la dirección del proveedor Supabase que aparece durante el consentimiento de Google. Un subdominio del proveedor no equivale a un dominio propio registrado.
+
+Para la transición, establecer la Site URL de Supabase y `APP_ORIGIN` del entorno `production` en el origen nuevo. Añadir sus dos callbacks exactos conservando los anteriores y los locales. Publicar el nuevo Worker con las mismas claves de proyecto y sesión. Mantener temporalmente el Worker anterior con su `APP_ORIGIN` original para que los enlaces, sesiones y verificaciones ya iniciadas sigan funcionando. No borrar usuarios, migrar puntos ni duplicar la base de datos. Antes de retirar el acceso anterior, comprobar el registro completo con una cuenta real en la dirección nueva.
+
+El flujo actual inicia OAuth desde el servidor y mantiene el callback de Google en `https://tbudcwwvkfdeziukmydq.supabase.co/auth/v1/callback`; ese callback no cambia por acortar la dirección de la app. Al revisar el cliente web en Google, añadir también `https://club.pit-detail.workers.dev` a los orígenes JavaScript y conservar el anterior durante la transición.
+
+Para mostrar `PIT DETAIL Club` y su logo en el consentimiento, Google exige verificar y publicar la marca en **Google Auth Platform → Información de la marca**. Cambiar el nombre interno del proyecto o del cliente OAuth no lo resuelve. Preparar una página pública que describa el club, los enlaces de privacidad y condiciones, el correo del negocio y la comprobación de propiedad del sitio que solicite Google. La portada de verificación debe explicar la app y enlazar la privacidad; no puede consistir solamente en el formulario de acceso. La aprobación depende de Google y queda pendiente; no anunciar la marca como verificada antes de verla publicada.
+
+Supabase reserva los dominios personalizados y los subdominios de marca para planes de pago. Conservar el proyecto Free; no activar complementos de pago para este cambio. Fuentes oficiales revisadas el 11 de septiembre de 2026: [direcciones de Workers](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/), [marca de Google](https://support.google.com/cloud/answer/15549049?hl=en), [requisitos de verificación](https://support.google.com/cloud/answer/13464321?hl=en), [dominios de Supabase](https://supabase.com/docs/guides/platform/custom-domains).
 
 ## Publicación desde GitHub
 
