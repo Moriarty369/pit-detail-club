@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { createHmac, randomUUID } from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
 const config = JSON.parse(
   readFileSync(".local/cloud-test-config.json", "utf8"),
 );
@@ -38,8 +39,8 @@ async function confirmFactor(page: Page, secret: string) {
   await page.getByLabel("Código del autenticador").fill(totp(secret));
   await page.getByRole("button", { name: "Verificar código" }).click();
 }
-async function mailLink(page: Page, email: string) {
-  let link = "";
+async function mailCode(page: Page, email: string) {
+  let code = "";
   await expect
     .poll(
       async () => {
@@ -56,19 +57,17 @@ async function mailLink(page: Page, email: string) {
             config.mailUrl + "/api/v1/message/" + message.ID,
           )
         ).json();
-        const match = (detail.HTML || detail.Text || "").match(
-          /https?:[^\s"<>]+\/auth\/v1\/verify[^\s"<>]+/,
-        );
+        const match = (detail.HTML || detail.Text || "").match(/\b[0-9]{6}\b/);
         if (!match) return false;
-        link = match[0].replaceAll("&amp;", "&");
+        code = match[0];
         return true;
       },
       { timeout: 20000 },
     )
     .toBe(true);
-  return link;
+  return code;
 }
-test("registro con correo real local, 2FA, servicio y canje entre los dos portales", async ({
+test("registro con correo local, 2FA, puntos y canje con permisos reales", async ({
   page,
   browser,
 }, info) => {
@@ -82,19 +81,20 @@ test("registro con correo real local, 2FA, servicio y canje entre los dos portal
   await page.getByLabel("Contraseña", { exact: true }).fill(config.password);
   await page.getByRole("button", { name: "Crear cuenta", exact: true }).click();
   await expect(page.getByRole("status")).toContainText(
-    "enlace de verificación",
+    "código de verificación",
   );
-  await page.goto(await mailLink(page, email));
+  await page
+    .getByLabel("Código recibido por correo")
+    .fill(await mailCode(page, email));
+  await page.getByRole("button", { name: "Confirmar código" }).click();
   await expect(page.locator(".points-value")).toHaveText("2.000pts");
   const welcomeMember = await (await page.request.get("/api/me")).json();
   expect(welcomeMember.welcomeReward.points).toBe(2000);
   expect(welcomeMember.entries).toEqual([]);
   expect(welcomeMember.quarterSpend).toBe(0);
-  await page
-    .getByRole("button", { name: "Mis servicios", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Mi actividad", exact: true }).click();
   await expect(
-    page.getByRole("region", { name: "Recompensa de bienvenida" }),
+    page.getByRole("article", { name: "Recompensa de bienvenida" }),
   ).toContainText("+2.000 pts");
   await page.getByRole("button", { name: "Mi perfil", exact: true }).click();
   await page.getByLabel("Tipo de vehículo").selectOption("motorcycle");
@@ -124,127 +124,118 @@ test("registro con correo real local, 2FA, servicio y canje entre los dos portal
   expect(
     (await (await page.request.get("/api/me")).json()).welcomeReward,
   ).toEqual(welcomeMember.welcomeReward);
-  const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+  const staff = createClient(config.apiUrl, config.anonKey, {
+    auth: { persistSession: false },
   });
-  const admin = await context.newPage();
-  admin.on("pageerror", (e) => errors.push(e.message));
-  try {
-    await admin.goto("http://127.0.0.1:8788");
-    await login(admin, "admin@pit.test");
-    await expect(admin.locator(".mfa-panel")).toBeVisible();
-    const secretsPath = ".local/admin-test-factor.txt";
-    let adminSecret = "";
-    if (
-      await admin
-        .getByRole("button", { name: "Configurar autenticador" })
-        .isVisible()
-    ) {
-      await admin
-        .getByRole("button", { name: "Configurar autenticador" })
-        .click();
-      adminSecret = await admin
-        .getByLabel("Clave del autenticador")
-        .inputValue();
-      writeFileSync(secretsPath, adminSecret, { mode: 0o600 });
-    } else {
-      adminSecret = readFileSync(secretsPath, "utf8");
-    }
-    await confirmFactor(admin, adminSecret);
-    await admin.getByLabel("Buscar cliente").fill(email);
-    await admin.getByRole("button", { name: "Buscar", exact: true }).click();
-    await expect(admin.locator(".customer-item")).toHaveCount(1);
-    await admin.getByRole("button", { name: "Abrir cliente" }).click();
-    await admin
-      .getByLabel("Servicio", { exact: true })
-      .selectOption("Detailing integral");
-    await admin.getByLabel("Importe pagado (USD)").fill("250");
-    await admin
-      .getByRole("button", { name: "Registrar y sumar puntos" })
-      .click();
-    await expect(admin.getByRole("status")).toContainText(
-      "Servicio registrado",
-    );
-    await page.reload();
-    await expect(page.locator(".points-value")).toHaveText("252.000pts");
-    await page.getByRole("button", { name: "Beneficios", exact: true }).click();
-    await page
-      .locator(".offer-card")
-      .filter({ hasText: "Cuida tu motor" })
-      .getByRole("button")
-      .click();
-    await page.getByRole("button", { name: "Generar código de canje" }).click();
-    const code = await page.locator(".redemption-code").textContent();
-    await admin.getByLabel("Código de canje").fill(code!);
-    await admin.getByLabel("He comprobado").check();
-    await admin
-      .getByRole("button", { name: "Validar canje", exact: true })
-      .click();
-    await expect(admin.getByRole("status")).toContainText("Canje validado");
-    await page.goto("/#home");
-    await page.reload();
-    await expect(page.locator(".points-value")).toHaveText("152.000pts");
-    const member = await (await page.request.get("/api/me")).json();
-    const entry = {
-      id: randomUUID(),
-      customerId: member.customer.id,
-      vehicleId: member.vehicles[0].id,
-      service: "Lavado de moto",
-      cents: 500,
-      mode: "En local",
-    };
-    const headers = { Origin: "http://127.0.0.1:8788", "X-PIT-Client": "1" };
-    const duplicates = await Promise.all([
-      admin.request.post("http://127.0.0.1:8788/api/admin/services", {
-        headers,
-        data: entry,
-      }),
-      admin.request.post("http://127.0.0.1:8788/api/admin/services", {
-        headers,
-        data: entry,
-      }),
-    ]);
-    expect(duplicates.map((r) => r.status())).toEqual([200, 200]);
-    expect((await (await page.request.get("/api/me")).json()).points).toBe(
-      157000,
-    );
-    const reversals = await Promise.all([
-      admin.request.post(
-        `http://127.0.0.1:8788/api/admin/services/${entry.id}/void`,
-        { headers, data: { reason: "Servicio duplicado en la factura" } },
-      ),
-      admin.request.post(
-        `http://127.0.0.1:8788/api/admin/services/${entry.id}/void`,
-        { headers, data: { reason: "Servicio duplicado en la factura" } },
-      ),
-    ]);
-    expect(reversals.map((r) => r.status())).toEqual([200, 200]);
-    expect((await (await page.request.get("/api/me")).json()).points).toBe(
-      152000,
-    );
-    expect((await page.request.get("/api/admin/customers")).status()).toBe(404);
-    expect(await page.evaluate(() => document.cookie)).not.toContain(
-      "pit-client",
-    );
+  const signedIn = await staff.auth.signInWithPassword({
+    email: `admin-${info.project.name}@pit.test`,
+    password: config.password,
+  });
+  expect(signedIn.error).toBeNull();
+  expect(
+    (await staff.rpc("pit_admin_customers", { p_search: "" })).error,
+  ).toBeTruthy();
+  const enrollment = await staff.auth.mfa.enroll({
+    factorType: "totp",
+    friendlyName: "Disposable test factor",
+  });
+  expect(enrollment.error).toBeNull();
+  if (!enrollment.data) throw new Error("Missing local fixture factor");
+  const verified = await staff.auth.mfa.challengeAndVerify({
+    factorId: enrollment.data.id,
+    code: totp(enrollment.data.totp.secret),
+  });
+  expect(verified.error).toBeNull();
+  // Test-only secret, never uploaded as an artifact or committed.
+  writeFileSync(
+    `.local/admin-test-factor-${info.project.name}.txt`,
+    enrollment.data.totp.secret,
+    { mode: 0o600 },
+  );
+  const member = await (await page.request.get("/api/me")).json();
+  const service = {
+    p_id: randomUUID(),
+    p_customer: member.customer.id,
+    p_vehicle: member.vehicles[0].id,
+    p_service: "Detailing integral",
+    p_cents: 25000,
+    p_mode: "En local",
+  };
+  const added = await staff.rpc("pit_add_service", service);
+  expect(added.error).toBeNull();
+  await page.getByRole("button", { name: "Actualizar saldo" }).click();
+  await expect(page.locator(".points-value")).toHaveText("252.000pts");
+  await expect(page.getByLabel("Puntos recibidos")).toContainText(
+    "+250.000 puntos",
+  );
+  await page.getByRole("button", { name: "Beneficios", exact: true }).click();
+  await page
+    .locator(".offer-card")
+    .filter({ hasText: "Cuida tu motor" })
+    .getByRole("button")
+    .click();
+  await page.getByRole("button", { name: "Generar código de canje" }).click();
+  const code = await page.locator(".redemption-code").textContent();
+  const redeemed = await staff.rpc("pit_redeem", {
+    p_customer: member.customer.id,
+    p_code: code,
+    p_conditions: true,
+  });
+  expect(redeemed.error).toBeNull();
+  await page.getByRole("button", { name: "Comprobar canje" }).click();
+  await expect(
+    page.getByText("Código utilizado", { exact: true }),
+  ).toBeVisible();
+  await page.goto("/#home");
+  await page.reload();
+  await expect(page.locator(".points-value")).toHaveText("152.000pts");
+  const entry = {
+    ...service,
+    p_id: randomUUID(),
+    p_service: "Lavado de moto",
+    p_cents: 500,
+  };
+  const duplicates = await Promise.all([
+    staff.rpc("pit_add_service", entry),
+    staff.rpc("pit_add_service", entry),
+  ]);
+  expect(duplicates.map((r) => r.error)).toEqual([null, null]);
+  expect((await (await page.request.get("/api/me")).json()).points).toBe(
+    157000,
+  );
+  const reversal = {
+    p_id: entry.p_id,
+    p_reason: "Servicio duplicado en la factura",
+  };
+  const reversals = await Promise.all([
+    staff.rpc("pit_void_service", reversal),
+    staff.rpc("pit_void_service", reversal),
+  ]);
+  expect(reversals.map((r) => r.error)).toEqual([null, null]);
+  expect((await (await page.request.get("/api/me")).json()).points).toBe(
+    152000,
+  );
+  await staff.auth.signOut();
+  expect((await page.request.get("/api/admin/customers")).status()).toBe(404);
+  expect(await page.evaluate(() => document.cookie)).not.toContain(
+    "pit-client",
+  );
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain(
+    "access_token",
+  );
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
     expect(
-      await page.evaluate(() => JSON.stringify(localStorage)),
-    ).not.toContain("access_token");
-    for (const width of [320, 390, 768, 1440]) {
-      await page.setViewportSize({ width, height: 844 });
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-      ).toBe(true);
-    }
-    await page.screenshot({
-      path: `test-results/cloud-client-${info.project.name}.png`,
-      fullPage: true,
-    });
-    expect(errors).toEqual([]);
-  } finally {
-    await context.close();
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
   }
+  await page.screenshot({
+    path: `test-results/cloud-client-${info.project.name}.png`,
+    fullPage: true,
+  });
+  expect(errors).toEqual([]);
 });
 test("recuperación de contraseña utiliza correo, permite el nuevo acceso y revoca sesiones anteriores", async ({
   page,
@@ -266,10 +257,13 @@ test("recuperación de contraseña utiliza correo, permite el nuevo acceso y rev
     const recoveryResponse = page.waitForResponse((r) =>
       r.url().endsWith("/api/auth/forgot"),
     );
-    await page.getByRole("button", { name: "Enviar enlace" }).click();
+    await page.getByRole("button", { name: "Enviar código" }).click();
     expect((await recoveryResponse).status()).toBe(202);
     await expect(page.getByRole("status")).toContainText("recuperar");
-    await page.goto(await mailLink(page, email));
+    await page
+      .getByLabel("Código recibido por correo")
+      .fill(await mailCode(page, email));
+    await page.getByRole("button", { name: "Confirmar código" }).click();
     await expect(
       page.getByRole("heading", { name: "Elige una nueva contraseña" }),
     ).toBeVisible();

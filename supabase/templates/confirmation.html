@@ -1,5 +1,7 @@
 <h2>Confirma tu correo en PIT DETAIL Club</h2>
 <p>Para completar tu registro, confirma esta dirección de correo.</p>
-<p><a href="{{ .ConfirmationURL }}">Confirmar mi correo</a></p>
-<p>Abre el enlace en el mismo navegador donde creaste la cuenta.</p>
+<p>Tu código de verificación es:</p>
+<p style="font-size:32px;letter-spacing:6px;font-weight:bold">{{ .Token }}</p>
+<p>Introduce los seis dígitos en la app. El código caduca y solo se puede utilizar una vez.</p>
+<p><a href="{{ .SiteURL }}/#confirm-email">Volver a PIT DETAIL Club</a></p>
 <p>Si no solicitaste este registro, puedes ignorar este mensaje.</p>

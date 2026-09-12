@@ -79,3 +79,198 @@ body.connected::after {
 .captcha {
   margin: 16px 0;
 }
+.points-value .points-digits {
+  font: inherit;
+  letter-spacing: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.points-heading {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.loyalty-card::after { pointer-events: none; }
+.points-heading .points-label {
+  margin: 0;
+}
+.points-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  padding: 8px 0 8px 8px;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+.points-refresh .icon {
+  width: 13px;
+  height: 13px;
+}
+.points-refresh:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.points-refresh:focus-visible {
+  outline: 2px solid #f3c83b;
+  outline-offset: 3px;
+}
+.points-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.points-receipt {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 26px;
+  padding: 22px 56px 22px 22px;
+  border: 1px solid #e3cd88;
+  border-radius: 12px;
+  background: linear-gradient(115deg, #fff6d9, #fffdf5 65%, #edf2fa);
+  box-shadow: 0 6px 22px #17335a08;
+  animation: points-arrive 450ms ease-out both;
+}
+.points-receipt::before {
+  content: "";
+  position: absolute;
+  inset: 0 14px auto;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    #f3c83b 0 33.33%,
+    #da3d30 33.33% 66.66%,
+    #2754a4 66.66%
+  );
+}
+.points-receipt-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  background: #f7df97;
+  color: #705211;
+  border-radius: 50%;
+}
+.points-receipt-copy {
+  min-width: 0;
+}
+.points-receipt .eyebrow {
+  color: #795b19;
+  font-size: 9px;
+  margin-bottom: 7px;
+}
+.points-receipt h2 {
+  color: #182945;
+  font-size: 22px;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+.points-receipt p {
+  color: #475466;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0 0 10px;
+}
+.points-receipt p strong {
+  color: #244d8d;
+  white-space: nowrap;
+}
+.points-receipt .text-button {
+  color: #244d8d;
+  font-size: 12px;
+}
+.points-receipt-close {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #475466;
+  cursor: pointer;
+}
+.points-receipt-close:hover {
+  background: #17335a0c;
+}
+.points-receipt-close:focus-visible {
+  outline: 2px solid #2754a4;
+  outline-offset: 2px;
+}
+.welcome-activity .service-icon {
+  background: #fff2c9;
+  color: #795b19;
+}
+.welcome-activity .service-amount strong {
+  color: #244d8d;
+}
+.welcome-activity .service-amount {
+  white-space: nowrap;
+}
+.admin-member .service-row {
+  flex-wrap: wrap;
+}
+.admin-member .service-info {
+  flex: 1;
+  min-width: 160px;
+}
+.filter-row {
+  flex-wrap: wrap;
+}
+@keyframes points-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 640px) {
+  .points-receipt {
+    padding: 18px 42px 18px 16px;
+    gap: 10px;
+  }
+  .points-receipt-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .points-receipt-icon .icon {
+    width: 18px;
+    height: 18px;
+  }
+  .points-receipt h2 {
+    font-size: 20px;
+  }
+  .points-receipt p {
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .points-receipt {
+    animation: none;
+  }
+  .loyalty-card .progress span {
+    transition: none;
+  }
+}
+
+.refresh-warning { position: fixed; z-index: 80; bottom: 1rem; left: 50%; transform: translateX(-50%); width: min(90vw, 34rem); margin: 0; padding: .85rem 1rem; border: 1px solid #f5c542; border-radius: .8rem; background: #211d12; color: #fff1b3; box-shadow: 0 4px 20px #0005; font-size: .9rem; }

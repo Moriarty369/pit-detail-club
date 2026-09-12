@@ -14,7 +14,7 @@ if (
   !["127.0.0.1", "localhost"].includes(new URL(values.API_URL).hostname)
 )
   throw new Error("Las pruebas requieren Supabase local.");
-for (const filename of [".dev.vars", "cloud/admin/.dev.vars"])
+for (const filename of [".dev.vars"])
   if (existsSync(filename) && process.env.CI !== "true")
     throw new Error(
       `${filename} ya existe. Conserva tus variables antes de preparar las pruebas.`,
@@ -24,7 +24,8 @@ const sb = createClient(values.API_URL, values.SERVICE_ROLE_KEY, {
 });
 const password = "PIT-local-tests-only-2026!";
 for (const [email, name, role] of [
-  ["admin@pit.test", "Admin pruebas", "admin"],
+  ["admin-chromium@pit.test", "Admin Chromium", "admin"],
+  ["admin-webkit@pit.test", "Admin WebKit", "admin"],
   ["recovery-chromium@pit.test", "Cliente pruebas", "customer"],
   ["recovery-webkit@pit.test", "Cliente pruebas", "customer"],
 ]) {
@@ -49,20 +50,17 @@ for (const [email, name, role] of [
   }
 }
 mkdirSync(".local", { recursive: true, mode: 0o700 });
-const cookieSecret = randomBytes(32).toString("hex");
-for (const [file, port, portal] of [
-  [".dev.vars", 8787, "customer"],
-  ["cloud/admin/.dev.vars", 8788, "admin"],
-])
+for (const [file, port, portal] of [[".dev.vars", 8787, "customer"]])
   writeFileSync(
     file,
-    `SUPABASE_URL=${JSON.stringify(values.API_URL)}\nSUPABASE_ANON_KEY=${JSON.stringify(values.ANON_KEY)}\nCOOKIE_SECRET=${JSON.stringify(cookieSecret)}\nAPP_ORIGIN="http://127.0.0.1:${port}"\nPORTAL="${portal}"\nEMAIL_ENABLED="true"\nGOOGLE_ENABLED="false"\n`,
+    `SUPABASE_URL=${JSON.stringify(values.API_URL)}\nSUPABASE_ANON_KEY=${JSON.stringify(values.ANON_KEY)}\nCOOKIE_SECRET=${JSON.stringify(randomBytes(32).toString("hex"))}\nAPP_ORIGIN="http://127.0.0.1:${port}"\nPORTAL="${portal}"\nEMAIL_ENABLED="true"\nGOOGLE_ENABLED="false"\n`,
     { mode: 0o600 },
   );
 writeFileSync(
   ".local/cloud-test-config.json",
   JSON.stringify({
     apiUrl: values.API_URL,
+    anonKey: values.ANON_KEY,
     mailUrl: values.INBUCKET_URL || "http://127.0.0.1:54324",
     password,
   }),

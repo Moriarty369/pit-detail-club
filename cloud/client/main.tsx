@@ -1,10 +1,10 @@
 import { Component, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import "../../src/style.css";
-import "../../src/branding.css";
-import "../../src/cards.css";
-import "../../src/auth.css";
+import "./styles/style.css";
+import "./styles/branding.css";
+import "./styles/cards.css";
+import "./styles/auth.css";
 import "./cloud.css";
 class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
