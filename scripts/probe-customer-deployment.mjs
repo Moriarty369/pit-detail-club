@@ -22,14 +22,22 @@ const headers = [
 ];
 async function get(path, extra = {}) {
   const start = performance.now();
-  const r = await fetch(origin + path, {
+  let r = await fetch(origin + path, {
     headers: extra,
     signal: AbortSignal.timeout(15000),
     redirect: "manual",
   });
+  let redirectedTo;
+  if ([301, 302, 307, 308].includes(r.status) && ["/privacidad.html", "/condiciones.html"].includes(path)) {
+    const target = new URL(r.headers.get("location") || "", origin);
+    if (target.origin !== origin || !["/privacidad", "/condiciones"].includes(target.pathname)) throw new Error("Unexpected information-page redirect");
+    redirectedTo = target.pathname;
+    r = await fetch(target, { signal: AbortSignal.timeout(15000), redirect: "manual" });
+  }
   const text = await r.text();
   checks.push({
     path,
+    ...(redirectedTo ? { redirectedTo } : {}),
     status: r.status,
     ms: Math.round(performance.now() - start),
     bytes: Buffer.byteLength(text),
