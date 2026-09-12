@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { api, getSession, ApiError, type Config } from "./api";
-import { AccessLayout, Login, MFA, PasswordForm } from "./access";
+import { useEffect, useState, type FormEvent } from "react";
+import { api, getSession, ApiError, type Config } from "../shared/api";
+import { AccessLayout, MFA, PasswordForm } from "../shared/access";
 import {
   Brand,
   Stripes,
@@ -11,150 +11,53 @@ import {
   number,
   money,
   date,
-} from "./ui";
-import { Icon } from "./icons";
+} from "../shared/ui";
+import { Icon } from "../shared/icons";
 import {
   offers,
   canRequest,
   type Member,
   type SessionInfo,
 } from "../shared/contracts";
-export function AuthRoot({
-  children,
-}: {
-  children: (
-    s: SessionInfo,
-    update: (s: SessionInfo) => void,
-    logout: () => Promise<void>,
-    config: Config,
-  ) => ReactNode;
-}) {
-  const [session, setSession] = useState<SessionInfo | null>(null),
-    [config, setConfig] = useState<Config | null>(null),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState(""),
-    [hash, setHash] = useState(location.hash);
-  const update = (s: SessionInfo) => {
-    setSession(s);
-    setError("");
-  };
-  async function load() {
-    setLoading(true);
-    setError("");
-    try {
-      const [c, s] = await Promise.all([api<Config>("/config"), getSession()]);
-      setConfig(c);
-      setSession(s);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
-  async function logout() {
-    await api("/auth/logout", "POST", {});
-    setSession(null);
-    location.hash = "login";
-  }
-  useEffect(() => {
-    load();
-    const changed = () => setHash(location.hash);
-    window.addEventListener("hashchange", changed);
-    return () => window.removeEventListener("hashchange", changed);
-  }, []);
-  useEffect(() => {
-    if (!session) return;
-    const refresh = async () => {
-      if (
-        document.hidden ||
-        document.querySelector("dialog[open]") ||
-        document.activeElement?.matches("input,textarea,select")
-      )
-        return;
-      try {
-        const next = await getSession();
-        setSession((previous) =>
-          JSON.stringify(previous) === JSON.stringify(next) ? previous : next,
-        );
-      } catch {
-        /* Keep current data; mutations report failures. */
-      }
-    };
-    const timer = setInterval(refresh, 60000);
-    window.addEventListener("focus", refresh);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener("focus", refresh);
-    };
-  }, [session?.user.id]);
-  useEffect(() => {
-    document.body.classList.toggle(
-      "auth-locked",
-      !session || session.mfa.required,
-    );
-  }, [session]);
-  if (loading)
-    return (
-      <AccessLayout>
-        <h1>Abriendo tu club…</h1>
-        <p role="status">Conectando con tu cuenta.</p>
-      </AccessLayout>
-    );
-  if (error)
-    return (
-      <AccessLayout>
-        <h1>No se pudo abrir el club.</h1>
-        <ErrorText error={error} />
-        <button className="button primary" onClick={load}>
-          Volver a intentar
-        </button>
-      </AccessLayout>
-    );
-  if (!session) return <Login config={config!} onSession={update} />;
-  if (session.mfa.required)
-    return (
-      <AccessLayout admin={config?.portal === "admin"}>
-        <MFA session={session} onSession={update} />
-        <button
-          className="text-button auth-back"
-          onClick={() => logout().catch((e) => setError(e.message))}
-        >
-          Cerrar sesión
-        </button>
-      </AccessLayout>
-    );
-  if (hash === "#new-password")
-    return (
-      <AccessLayout>
-        <PasswordForm
-          recovery
-          onDone={() => {
-            setSession(null);
-            location.hash = "login";
-          }}
-        />
-      </AccessLayout>
-    );
-  return children(session, update, logout, config!);
-}
+import { AuthRoot } from "../shared/AuthRoot";
+import {
+  memberActivity,
+  WelcomeActivity,
+  type MemberActivity,
+} from "../shared/activity";
+import { usePointsFeedback } from "./points-feedback";
+import { PointsReceipt } from "./PointsReceipt";
 const views = [
   ["home", "Mi club", "home"],
   ["rewards", "Beneficios", "gift"],
-  ["history", "Mis servicios", "clock"],
+  ["history", "Mi actividad", "clock"],
   ["profile", "Mi perfil", "user"],
 ] as const;
 type View = (typeof views)[number][0];
 export default function App() {
   return (
-    <AuthRoot>
-      {(session, update, logout, config) => (
-        <Customer
-          session={session}
-          update={update}
-          logout={logout}
-          config={config}
-        />
-      )}
+    <AuthRoot portal="customer">
+      {(session, update, logout, config) =>
+        session.member ? (
+          <Customer
+            session={session}
+            update={update}
+            logout={logout}
+            config={config}
+          />
+        ) : (
+          <AccessLayout>
+            <h1>Tu cuenta necesita atención.</h1>
+            <p>Vuelve a entrar para cargar tus datos.</p>
+            <button
+              className="button primary"
+              onClick={() => logout().catch(() => location.reload())}
+            >
+              Cerrar sesión
+            </button>
+          </AccessLayout>
+        )
+      }
     </AuthRoot>
   );
 }
@@ -175,6 +78,7 @@ function Customer({
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
   const member = session.member!;
+  const pointsFeedback = usePointsFeedback(member);
   useEffect(() => {
     const change = () => {
       const next = location.hash.slice(1);
@@ -224,16 +128,6 @@ function Customer({
       setDialog("code:" + r.rewardId);
     });
   }
-  if (!member)
-    return (
-      <AccessLayout>
-        <h1>Tu cuenta necesita atención.</h1>
-        <p>Vuelve a entrar para cargar tus datos.</p>
-        <button className="button primary" onClick={() => logout()}>
-          Cerrar sesión
-        </button>
-      </AccessLayout>
-    );
   return (
     <>
       <aside className="sidebar">
@@ -310,8 +204,32 @@ function Customer({
         </header>
         <main id="main">
           <ErrorText error={dialog ? "" : error} />
+          <p
+            className="points-announcement"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {pointsFeedback.receipt &&
+              `Has recibido ${number(pointsFeedback.receipt.points)} puntos ${pointsFeedback.receipt.kind === "welcome" ? "de bienvenida" : "por tus servicios"}. Saldo actual: ${number(member.points)} puntos.`}
+          </p>
+          {pointsFeedback.receipt && (
+            <PointsReceipt
+              receipt={pointsFeedback.receipt}
+              name={member.customer.name.split(" ")[0]}
+              dismiss={pointsFeedback.dismiss}
+              showActivity={() => navigate("history")}
+            />
+          )}
           {view === "home" ? (
-            <Home member={member} navigate={navigate} show={setDialog} />
+            <Home
+              member={member}
+              navigate={navigate}
+              show={setDialog}
+              displayedPoints={pointsFeedback.displayed}
+              refreshing={busy}
+              refresh={() => action(async () => save(await api<Member>("/me")))}
+            />
           ) : view === "rewards" ? (
             <Rewards member={member} show={setDialog} />
           ) : view === "history" ? (
@@ -401,6 +319,7 @@ function Customer({
             <>
               <h2 id="modal-title">Seguridad de acceso</h2>
               <PasswordForm
+                captchaSiteKey={config.captchaSiteKey}
                 onDone={() => {
                   setDialog(null);
                   logout().catch(() => location.reload());
@@ -414,7 +333,12 @@ function Customer({
               request={() => request("rappel")}
             />
           ) : dialog.startsWith("code:") ? (
-            <RewardCode member={member} id={dialog.slice(5)} />
+            <RewardCode
+              member={member}
+              id={dialog.slice(5)}
+              busy={busy}
+              refresh={() => action(async () => save(await api<Member>("/me")))}
+            />
           ) : (
             <OfferDetail
               member={member}
@@ -451,12 +375,19 @@ function Home({
   member: m,
   navigate,
   show,
+  displayedPoints,
+  refresh,
+  refreshing,
 }: {
   member: Member;
   navigate: (v: View) => void;
   show: (id: string) => void;
+  displayedPoints: number;
+  refresh: () => void;
+  refreshing: boolean;
 }) {
   const wash = offers[0];
+  const recent = memberActivity(m).slice(0, 3);
   return (
     <>
       <Heading
@@ -487,16 +418,33 @@ function Home({
             </div>
             <span className="member-pill">MIEMBRO</span>
           </div>
-          <div className="points-label">TU SALDO DE PUNTOS</div>
-          <div className="points-value">
-            {number(m.points)}
-            <span>pts</span>
+          <div className="points-heading">
+            <div className="points-label">TU SALDO DE PUNTOS</div>
+            <button
+              className="points-refresh"
+              disabled={refreshing}
+              onClick={refresh}
+              aria-label="Actualizar saldo"
+            >
+              <Icon name="clock" />{" "}
+              {refreshing ? "Actualizando…" : "Actualizar"}
+            </button>
+          </div>
+          <div
+            className="points-value"
+            aria-label={`Saldo: ${number(m.points)} puntos`}
+          >
+            <span className="points-digits" aria-hidden="true">
+              {number(displayedPoints)}
+            </span>
+            <span aria-hidden="true">pts</span>
           </div>
           <div className="card-progress">
             <div className="progress light">
               <span
                 style={{
-                  width: Math.min(100, (m.points / wash.cost) * 100) + "%",
+                  width:
+                    Math.min(100, (displayedPoints / wash.cost) * 100) + "%",
                 }}
               />
             </div>
@@ -620,13 +568,13 @@ function Home({
       <section className="bottom-grid">
         <div className="recent-panel">
           <div className="section-heading">
-            <h2>Tu última parada</h2>
+            <h2>Tu actividad reciente</h2>
             <button className="text-button" onClick={() => navigate("history")}>
               Ver historial <Icon name="arrow" />
             </button>
           </div>
-          {m.entries.length ? (
-            <ServiceRow entry={m.entries[m.entries.length - 1]} />
+          {recent.length ? (
+            recent.map((item) => <ActivityRow key={item.id} item={item} />)
           ) : (
             <p className="empty-text">
               Tu primer servicio será el comienzo de algo bueno.
@@ -778,7 +726,7 @@ function ServiceRow({ entry: e }: { entry: Member["entries"][number] }) {
       <div className="service-info">
         <strong>{e.service}</strong>
         <span>
-          {date(e.date)} · {e.mode}
+          <time dateTime={e.date}>{date(e.date)}</time> · {e.mode}
           {e.voided ? " · Anulado" : ""}
         </span>
       </div>
@@ -791,20 +739,31 @@ function ServiceRow({ entry: e }: { entry: Member["entries"][number] }) {
     </div>
   );
 }
+function ActivityRow({ item }: { item: MemberActivity }) {
+  return item.kind === "welcome" ? (
+    <WelcomeActivity points={item.points} date={item.date} />
+  ) : (
+    <ServiceRow entry={item.entry} />
+  );
+}
 function History({ member }: { member: Member }) {
   const [filter, setFilter] = useState("Todos");
-  const entries = [...member.entries]
-    .reverse()
-    .filter((e) => filter === "Todos" || e.mode === filter);
+  const entries = memberActivity(member).filter(
+    (item) =>
+      filter === "Todos" ||
+      (filter === "Bienvenida"
+        ? item.kind === "welcome"
+        : item.kind === "service" && item.entry.mode === filter),
+  );
   return (
     <>
       <Heading
         eyebrow="EL CAMINO RECORRIDO"
-        title="Tus servicios."
-        subtitle="Un historial de cuidado. Y de puntos que suman."
+        title="Tu actividad."
+        subtitle="Tu bienvenida y cada servicio, con sus puntos y su fecha."
       />
       <div className="filter-row">
-        {["Todos", "En local", "A domicilio"].map((f) => (
+        {["Todos", "En local", "A domicilio", "Bienvenida"].map((f) => (
           <button
             key={f}
             className={`filter ${filter === f ? "selected" : ""}`}
@@ -816,29 +775,13 @@ function History({ member }: { member: Member }) {
       </div>
       <section className="recent-panel history-list">
         {entries.length ? (
-          entries.map((e) => <ServiceRow key={e.id} entry={e} />)
+          entries.map((item) => <ActivityRow key={item.id} item={item} />)
         ) : (
           <p className="empty-state">
-            Todavía no hay servicios en esta categoría.
+            Todavía no hay movimientos en esta categoría.
           </p>
         )}
       </section>
-      {member.welcomeReward && (
-        <section className="recent-panel" aria-label="Recompensa de bienvenida">
-          <div className="service-row">
-            <span className="service-icon">
-              <Icon name="gift" />
-            </span>
-            <div className="service-info">
-              <strong>Bienvenida al club</strong>
-              <span>{date(member.welcomeReward.date)} · Recompensa única</span>
-            </div>
-            <div className="service-amount">
-              <strong>+{number(member.welcomeReward.points)} pts</strong>
-            </div>
-          </div>
-        </section>
-      )}
     </>
   );
 }
@@ -1102,7 +1045,17 @@ function RappelDetail({
     </>
   );
 }
-function RewardCode({ member, id }: { member: Member; id: string }) {
+function RewardCode({
+  member,
+  id,
+  busy,
+  refresh,
+}: {
+  member: Member;
+  id: string;
+  busy: boolean;
+  refresh: () => Promise<void>;
+}) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -1117,7 +1070,11 @@ function RewardCode({ member, id }: { member: Member; id: string }) {
   return (
     <>
       <h2 id="modal-title">Tu próximo extra está listo.</h2>
-      <p>Comparte este código con el personal de PIT DETAIL.</p>
+      <p>
+        {r.status === "used"
+          ? "Tu beneficio ya ha sido validado."
+          : "Comparte este código con el personal de PIT DETAIL."}
+      </p>
       <div className="redemption-code">{r.code}</div>
       <p role="status">
         {r.status === "used"
@@ -1128,9 +1085,18 @@ function RewardCode({ member, id }: { member: Member; id: string }) {
       </p>
       <p className="small-note">
         {r.cost
-          ? `${number(r.cost)} puntos se descontarán al validar.`
-          : `${r.percent}% de descuento al validar.`}
+          ? `${number(r.cost)} puntos ${r.status === "used" ? "descontados." : "se descontarán al validar."}`
+          : `${r.percent}% de descuento ${r.status === "used" ? "aplicado." : "al validar."}`}
       </p>
+      {r.status === "pending" && (
+        <button
+          className="button primary full"
+          disabled={busy}
+          onClick={refresh}
+        >
+          {busy ? "Comprobando…" : "Comprobar canje"}
+        </button>
+      )}
     </>
   );
 }

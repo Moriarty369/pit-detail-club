@@ -20,13 +20,6 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 120000,
     },
-    {
-      command:
-        "npx wrangler dev --config cloud/admin/wrangler.jsonc --port 8788 --ip 127.0.0.1",
-      url: "http://127.0.0.1:8788",
-      reuseExistingServer: false,
-      timeout: 120000,
-    },
   ],
   reporter: "list",
 });

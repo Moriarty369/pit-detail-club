@@ -7,10 +7,13 @@ import {
   cleanup,
   waitFor,
 } from "@testing-library/react";
-import { Login } from "../client/access";
-import { Heading } from "../client/ui";
+import { Login } from "../shared/access";
+import { Heading } from "../shared/ui";
 afterEach(() => {
   cleanup();
+  location.hash = "";
+  document.querySelector("#turnstile-sdk")?.remove();
+  delete (window as any).turnstile;
   vi.unstubAllGlobals();
 });
 test("API failures keep the login form usable and never enter the account", async () => {
@@ -148,5 +151,116 @@ test.each(["client@icloud.com", "client@outlook.com"])(
       }),
     );
     expect(onSession).not.toHaveBeenCalled();
+  },
+);
+
+test("CAPTCHA blocks submissions until solved and renews after a failed login", async () => {
+  let challenge: any;
+  (window as any).turnstile = {
+    render: vi.fn((_el, options) => {
+      challenge = options;
+      return "widget";
+    }),
+    remove: vi.fn(),
+  };
+  const fetch = vi
+    .fn()
+    .mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: "Revisa tus datos." }),
+    });
+  vi.stubGlobal("fetch", fetch);
+  render(
+    <Login
+      config={{
+        portal: "customer",
+        emailEnabled: true,
+        googleEnabled: false,
+        captchaSiteKey: "test-key",
+      }}
+      onSession={vi.fn()}
+    />,
+  );
+  const button = screen.getByRole("button", {
+    name: "Continuar",
+  }) as HTMLButtonElement;
+  expect(button.disabled).toBe(true);
+  fireEvent.submit(button.closest("form")!);
+  expect(fetch).not.toHaveBeenCalled();
+  await import("@testing-library/react").then(({ act }) =>
+    act(() => challenge.callback("first-token")),
+  );
+  expect(button.disabled).toBe(false);
+  fireEvent.change(screen.getByLabelText("Correo electrónico"), {
+    target: { value: "client@example.test" },
+  });
+  fireEvent.change(screen.getByLabelText("Contraseña"), {
+    target: { value: "test-password-long" },
+  });
+  fireEvent.submit(button.closest("form")!);
+  await waitFor(() =>
+    expect(screen.getByRole("alert").textContent).toContain("Revisa tus datos"),
+  );
+  expect(button.disabled).toBe(true);
+  expect((window as any).turnstile.render).toHaveBeenCalledTimes(2);
+  await import("@testing-library/react").then(({ act }) =>
+    act(() => challenge.callback("renewed-token")),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Registrarse" }));
+  expect(
+    (screen.getByRole("button", { name: "Crear cuenta" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+});
+
+test.each(["email", "recovery"])(
+  "a code opened in another browser verifies its %s purpose before entering",
+  async (purpose) => {
+    location.hash = purpose === "recovery" ? "#recover-code" : "#confirm-email";
+    const session = {
+      user: { id: "test" },
+      role: "customer",
+      mfa: { required: false },
+    };
+    const fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, status: 200, json: async () => session });
+    const onSession = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    render(
+      <Login
+        config={{
+          portal: "customer",
+          emailEnabled: true,
+          googleEnabled: true,
+          captchaSiteKey: "test-key",
+        }}
+        onSession={onSession}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Correo electrónico"), {
+      target: { value: "client@example.test" },
+    });
+    fireEvent.change(screen.getByLabelText("Código recibido por correo"), {
+      target: { value: "123456" },
+    });
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Confirmar código" }).closest("form")!,
+    );
+    await waitFor(() => expect(onSession).toHaveBeenCalledWith(session));
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/auth/verify-email",
+      expect.objectContaining({
+        body: JSON.stringify({
+          email: "client@example.test",
+          token: "123456",
+          purpose,
+        }),
+      }),
+    );
+    expect(location.hash).toBe(
+      purpose === "recovery" ? "#new-password" : "#home",
+    );
   },
 );
