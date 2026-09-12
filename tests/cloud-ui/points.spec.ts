@@ -89,12 +89,15 @@ async function mockAPI(page: Page, current: () => Member) {
 test("welcome counts up once and its dated movement appears in recent activity and history", async ({
   page,
 }, info) => {
+  await page.clock.install({ time: new Date("2026-09-12T12:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-09-12T12:01:00Z"));
   const m = member();
   const errors = await mockAPI(page, () => m);
   await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "¡Bienvenido al club, Alex!" }),
   ).toBeVisible();
+  await page.clock.runFor(400);
   await expect
     .poll(async () => {
       const n = Number(
@@ -103,6 +106,7 @@ test("welcome counts up once and its dated movement appears in recent activity a
       return n > 0 && n < 2000;
     })
     .toBe(true);
+  await page.clock.runFor(2000);
   await expect(page.locator(".points-value")).toHaveText("2.000pts");
   await expect(page.locator(".points-value")).toHaveAttribute(
     "aria-label",
@@ -141,9 +145,13 @@ test("welcome counts up once and its dated movement appears in recent activity a
 test("refresh celebrates a real service once, retains it after reload, and never celebrates a reversal", async ({
   page,
 }, info) => {
+  await page.clock.install({ time: new Date("2026-09-12T12:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-09-12T12:01:00Z"));
   let m = member();
   const errors = await mockAPI(page, () => m);
   await page.goto("/");
+  await expect(page.getByLabel("Puntos recibidos")).toBeVisible();
+  await page.clock.runFor(2200);
   await expect(page.locator(".points-value")).toHaveText("2.000pts");
   await page.getByRole("button", { name: "Ocultar aviso de puntos" }).click();
   m = addService(m);
@@ -151,6 +159,7 @@ test("refresh celebrates a real service once, retains it after reload, and never
   await expect(page.getByLabel("Puntos recibidos")).toContainText(
     "+5.000 puntos",
   );
+  await page.clock.runFor(400);
   await expect
     .poll(async () => {
       const n = Number(
@@ -159,6 +168,7 @@ test("refresh celebrates a real service once, retains it after reload, and never
       return n > 2000 && n < 7000;
     })
     .toBe(true);
+  await page.clock.runFor(2000);
   await expect(page.locator(".points-value")).toHaveText("7.000pts");
   await page.screenshot({
     path: `test-results/points-service-${info.project.name}.png`,
