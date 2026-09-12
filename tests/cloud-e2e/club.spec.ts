@@ -57,7 +57,7 @@ async function mailCode(page: Page, email: string) {
             config.mailUrl + "/api/v1/message/" + message.ID,
           )
         ).json();
-        const match = (detail.HTML || detail.Text || "").match(/\b[0-9]{6}\b/);
+        const match = (detail.HTML || detail.Text || "").match(/\b[0-9]{8}\b/);
         if (!match) return false;
         code = match[0];
         return true;

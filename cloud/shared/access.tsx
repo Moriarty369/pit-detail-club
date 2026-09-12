@@ -319,9 +319,9 @@ export function Login({
                   name="code"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  pattern="[0-9]{6}"
+                  pattern="[0-9]{6,10}"
                   minLength={6}
-                  maxLength={6}
+                  maxLength={10}
                   required
                 />
               </label>

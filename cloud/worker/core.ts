@@ -305,7 +305,8 @@ export function createBaseApp(
       z
         .object({
           email,
-          token: z.string().regex(/^\d{6}$/),
+          // Email OTP length is provider-configurable (6–10); Auth verifies the full code.
+          token: z.string().regex(/^[0-9]{6,10}$/),
           purpose: z.enum(["email", "recovery"]),
         })
         .strict(),
