@@ -57,6 +57,8 @@ for (const path of assets) {
   });
 }
 for (const path of [
+  "/privacidad.html",
+  "/condiciones.html",
   "/api/health",
   "/api/config",
   "/api/session",
@@ -95,3 +97,18 @@ console.log(
     fingerprints,
   }),
 );
+
+const failures = [];
+const first = path => checks.find(c => c.path === path);
+for (const path of ["/", "/privacidad.html", "/condiciones.html", "/api/health", "/api/config"])
+  if (first(path)?.status !== 200) failures.push(path + ": unavailable");
+for (const path of ["/api/session", "/api/me"])
+  if (first(path)?.status !== 401) failures.push(path + ": anonymous access not denied");
+if (first("/api/admin/customers")?.status !== 404) failures.push("Public administration routes must return 404");
+if (checks.at(-1)?.status !== 403) failures.push("Foreign origin not rejected");
+for (const path of ["/", "/api/health", "/api/me", "/privacidad.html"])
+  if (!first(path)?.headers["content-security-policy"] || (origin.startsWith("https:") && !first(path)?.headers["strict-transport-security"])) failures.push(path + ": missing security headers");
+for (const c of checks.filter(c => c.path.startsWith("/api/")))
+  if (!c.headers["cache-control"]?.includes("no-store")) failures.push(c.path + ": caching must be disabled");
+if (fingerprints.some(f => f.hasNewAdminForm)) failures.push("Private admin UI present in customer assets");
+if (failures.length) { console.error(JSON.stringify({ failures })); process.exitCode = 1; }
