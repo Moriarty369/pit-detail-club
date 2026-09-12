@@ -1,0 +1,44 @@
+body {
+  margin: 0;
+  background: #f0f2ef;
+  color: #242723;
+  font:
+    16px/1.65 system-ui,
+    sans-serif;
+}
+main {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+header {
+  background: #050505;
+  color: white;
+  padding: 24px;
+}
+header div {
+  max-width: 740px;
+  margin: auto;
+}
+a {
+  color: #a9271c;
+}
+header a {
+  color: white;
+}
+h1 {
+  line-height: 1.2;
+}
+h2 {
+  font-size: 1.25rem;
+  margin-top: 28px;
+}
+.stripes {
+  height: 5px;
+  background: linear-gradient(
+    to right,
+    #efd227 0 33.33%,
+    #d63b2b 33.33% 66.66%,
+    #24579b 66.66%
+  );
+}

@@ -1,61 +1,21 @@
 # PIT DETAIL Club
 
-Aplicación de fidelización para detailing, mecánica básica y cambio de aceite en Venezuela. Conserva el diseño de la beta, con tarjeta de puntos, promociones, rappel y vehículos del cliente: autos, motos y embarcaciones.
+Aplicación de fidelización para clientes de detailing, motos y embarcaciones. React y TypeScript, API Hono sobre Cloudflare Workers y Supabase Auth/PostgreSQL. Acceso: https://club.pit-detail.workers.dev
 
-La versión conectada usa **React + TypeScript + Vite**, una API **Hono en Cloudflare Workers** y **PostgreSQL + Supabase Auth**. El [piloto cliente](https://club.pit-detail.workers.dev) permite acceso con Google y registro por correo con contraseña y confirmación, en los planes gratuitos. El piloto usa Gmail SMTP para las verificaciones; su capacidad de envío es limitada.
+Este repositorio contiene la aplicación y API de clientes. El panel y la API administrativos se mantienen en un entorno local independiente. El cliente no puede asignar puntos, validar canjes ni consultar fichas de otras cuentas. Las operaciones de base de datos requieren rol autorizado, sesión vigente y segundo factor para administración.
 
-| Componente                   | Ubicación                          | Responsabilidad                                                                         |
-| ---------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------- |
-| App cliente                  | `cloud/client/`                    | Registro, acceso, tarjeta, vehículos, puntos, beneficios y perfil.                      |
-| Administración independiente | `cloud/admin/`                     | Servicios, anulaciones, canjes, reglas y auditoría. Sin publicación pública automática. |
-| API                          | `cloud/worker/`                    | Cookies HttpOnly, validación, permisos y comunicación con Supabase.                     |
-| Base de datos                | `supabase/migrations/`             | Transacciones, permisos por fila, puntos, historial y roles.                            |
-| Pruebas                      | `cloud/tests/`, `tests/cloud-e2e/` | Vitest, PostgreSQL, Playwright Chromium/WebKit y recuperación de copias.                |
+## Desarrollo y comprobaciones
 
-```mermaid
-flowchart LR
-  QR[QR o enlace] --> Cliente[App cliente · React]
-  Cliente --> API[API cliente · Cloudflare]
-  Equipo[Equipo del negocio] --> Admin[App y API administrativa · acceso privado]
-  API --> Auth[Supabase Auth · correo/Google y TOTP]
-  Admin --> Auth
-  API --> DB[(PostgreSQL · RLS y transacciones)]
-  Admin --> DB
-```
+Node 24 y `npm ci`. Ejecuta `npm run verify:cloud`, `npm run check:cloud:isolation` y, tras instalar Playwright, `npm run test:cloud:ui`. Para desarrollar la interfaz usa `npm run dev`; la API local usa `npm run dev:cloud` y variables privadas en `.dev.vars`.
 
-Cada cuenta nueva recibe **2.000 puntos de bienvenida una sola vez**. La base registra el movimiento y su auditoría en la misma transacción que crea el perfil; volver a iniciar sesión no genera más puntos. Se aplica desde la migración de bienvenida y no añade créditos retroactivos a cuentas existentes. El regalo aparece en el historial, no es un servicio y no cuenta para el gasto trimestral del rappel.
+El workflow `Verify customer MVP` levanta Supabase y un buzón desechables en GitHub Actions: comprueba registro y recuperación por código, TOTP, permisos, bienvenida, abonos, canje, anulación y recuperación de una copia cifrada. No usa cuentas ni datos de producción. Las pruebas de interfaz con respuestas simuladas se ejecutan separadamente de estos recorridos reales.
 
-Los servicios registrados por administración generan **$1 = 1.000 puntos**, con importes de $5 a $250. El saldo no se importa de la demo ni se acepta desde el navegador. Cada servicio tiene una referencia para evitar duplicados; las anulaciones compensan el movimiento original y quedan auditadas. Si sus puntos ya se gastaron, la anulación se rechaza para no crear saldo negativo.
+## Producción
 
-Los códigos de canje caducan a los cinco minutos; el descuento de puntos ocurre al confirmarlos el administrador. El rappel usa el trimestre de Caracas y se valida nuevamente al canjear. Varios vehículos pueden pertenecer a una cuenta; todavía no hay saldos compartidos entre cuentas de una flota.
+`main` identifica las entregas; el desarrollo se integra mediante ramas y PR hacia `develop`, antes de promoverlo a `main`. El despliegue del cliente es manual desde `main`, exige las comprobaciones y verifica la configuración de Auth antes de publicar. Las migraciones del entorno completo se administran de forma separada: el workflow público no modifica el esquema ni necesita la contraseña de la base.
 
-El segundo factor TOTP es obligatorio para administradores y opcional para clientes. Una vez activado, la API y la base exigen completarlo. Las contraseñas y factores los gestiona Supabase; la app no guarda tokens de acceso en `localStorage`. Los roles se mantienen en un esquema privado y no se pueden elegir al registrarse. El Worker utiliza la clave pública y la sesión del usuario, nunca `service_role`.
+Los secretos del entorno `production` incluyen el token de despliegue de Cloudflare, el acceso de gestión de Supabase, la clave pública de Supabase y la clave de firma de cookies. Nunca se utiliza `service_role` dentro del Worker. No guardar credenciales en el código ni publicar `.dev.vars`, `.local`, volcados o capturas con datos reales.
 
-## Ejecutar y verificar
+La bienvenida concede 2.000 puntos una sola vez. Cada dólar de servicio registrado concede 1.000 puntos; los movimientos y canjes se validan en la base, no en el almacenamiento del navegador. El código de correo verifica la dirección; TOTP es el segundo factor independiente.
 
-Node 24 LTS, npm y, para las pruebas completas, Docker y herramientas PostgreSQL 17.
-
-```sh
-npm ci
-npm run verify:cloud
-npx playwright install chromium webkit
-npx supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
-node scripts/prepare-cloud-tests.mjs
-npm run test:cloud:e2e
-```
-
-La preparación crea únicamente cuentas ficticias en Supabase local y archivos privados ignorados por Git. Rechaza proyectos remotos y no sobrescribe variables locales existentes. Playwright arranca ambos portales en `127.0.0.1:8787` y `127.0.0.1:8788` y verifica el registro mediante la bandeja de correo local, MFA y operaciones entre portales.
-
-`npm run dev:cloud` sirve la compilación cliente; `npm run dev:cloud:admin` sirve la administrativa. Después de modificar React, reconstruir con `build:cloud` o `build:cloud:admin`.
-
-El workflow `cloud-checks.yml` ejecuta pruebas unitarias, integración PostgreSQL, recorridos reales de navegador y una copia cifrada seguida de restauración sobre una base vacía. Solo publica capturas de la interfaz con datos de prueba; nunca trazas con factores de acceso.
-
-## Publicar el piloto
-
-Crear las ramas `feat/*` y `fix/*` desde `develop`. Integrarlas mediante PR después de pasar las pruebas; promover una revisión probada a `main` para publicarla. El workflow de producción solo permite desplegar desde `main`. Mientras no se configure su token Cloudflare en GitHub, el despliegue se realiza desde el equipo autorizado, con `main` limpio y actualizado.
-
-Seguir [la guía de despliegue gratuito y operación](docs/cloud-deployment.md). El workflow manual `cloud-deploy.yml` vuelve a ejecutar las pruebas, aplica migraciones, comprueba la configuración de acceso y publica exclusivamente el portal cliente. Genera un PNG con el QR y un archivo con el enlace.
-
-La [beta de GitHub Pages](https://moriarty369.github.io/pit-detail-club/) sigue siendo una demostración con datos en el navegador. El enlace y QR existentes se cambiarán únicamente después de comprobar el acceso al nuevo despliegue. Los comandos `build`, `test` y `test:server` mantienen las versiones anteriores; los comandos de la versión nueva llevan `cloud`.
-
-La implementación anterior de Node/SQLite se conserva documentada en [la guía del prototipo local](docs/legacy-sqlite.md). No debe confundirse con el backend Supabase del nuevo MVP.
+Los límites de los planes gratuitos y la entrega SMTP deben revisarse antes de ampliar el piloto. El número de cuentas por sí solo no garantiza capacidad. Las copias de producción se mantienen cifradas fuera de este repositorio público.

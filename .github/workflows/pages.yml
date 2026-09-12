@@ -1,39 +1,21 @@
-name: Publish beta to GitHub Pages
-
+name: Redirect former beta to customer club
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: pages
   cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run test:server
-      - run: npm run build:mvp
-      - name: Build for this repository
-        env:
-          PIT_BASE_PATH: /${{ github.event.repository.name }}/
-        run: npm run build
-      - run: npm run check:customer
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
-
+          path: pages
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -44,6 +26,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy
+      - name: Deploy redirect
         id: deployment
         uses: actions/deploy-pages@v4

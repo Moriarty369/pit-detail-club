@@ -77,7 +77,7 @@ try {
     auth: { persistSession: false },
   });
   const login = await sb.auth.signInWithPassword({
-    email: "admin@pit.test",
+    email: "admin-chromium@pit.test",
     password: "PIT-local-tests-only-2026!",
   });
   if (login.error || !login.data.user)
@@ -90,7 +90,7 @@ try {
     throw new Error(
       "Se permitió acceso administrativo sin segundo factor tras restaurar.",
     );
-  const secret = readFileSync(".local/admin-test-factor.txt", "utf8");
+  const secret = readFileSync(".local/admin-test-factor-chromium.txt", "utf8");
   let bits = "";
   for (const char of secret.toUpperCase().replace(/=+$/, ""))
     bits += "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
