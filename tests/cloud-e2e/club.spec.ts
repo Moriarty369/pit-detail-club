@@ -184,7 +184,7 @@ test("registro con correo local, 2FA, puntos y canje con permisos reales", async
   expect(redeemed.error).toBeNull();
   await page.getByRole("button", { name: "Comprobar canje" }).click();
   await expect(
-    page.getByText("Código utilizado", { exact: true }),
+    page.getByText("Código utilizado.", { exact: true }),
   ).toBeVisible();
   await page.goto("/#home");
   await page.reload();
