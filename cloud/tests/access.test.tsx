@@ -163,13 +163,11 @@ test("CAPTCHA blocks submissions until solved and renews after a failed login", 
     }),
     remove: vi.fn(),
   };
-  const fetch = vi
-    .fn()
-    .mockResolvedValue({
-      ok: false,
-      status: 401,
-      json: async () => ({ error: "Revisa tus datos." }),
-    });
+  const fetch = vi.fn().mockResolvedValue({
+    ok: false,
+    status: 401,
+    json: async () => ({ error: "Revisa tus datos." }),
+  });
   vi.stubGlobal("fetch", fetch);
   render(
     <Login
@@ -214,9 +212,13 @@ test("CAPTCHA blocks submissions until solved and renews after a failed login", 
   ).toBe(true);
 });
 
-test.each(["email", "recovery"])(
-  "a code opened in another browser verifies its %s purpose before entering",
-  async (purpose) => {
+test.each(
+  ["email", "recovery"].flatMap((purpose) =>
+    ["012345", "01234567", "0123456789"].map((token) => ({ purpose, token })),
+  ),
+)(
+  "a complete $token code verifies its $purpose purpose before entering",
+  async ({ purpose, token }) => {
     location.hash = purpose === "recovery" ? "#recover-code" : "#confirm-email";
     const session = {
       user: { id: "test" },
@@ -243,8 +245,13 @@ test.each(["email", "recovery"])(
       target: { value: "client@example.test" },
     });
     fireEvent.change(screen.getByLabelText("Código recibido por correo"), {
-      target: { value: "123456" },
+      target: { value: token },
     });
+    expect(
+      (
+        screen.getByLabelText("Código recibido por correo") as HTMLInputElement
+      ).checkValidity(),
+    ).toBe(true);
     fireEvent.submit(
       screen.getByRole("button", { name: "Confirmar código" }).closest("form")!,
     );
@@ -254,7 +261,7 @@ test.each(["email", "recovery"])(
       expect.objectContaining({
         body: JSON.stringify({
           email: "client@example.test",
-          token: "123456",
+          token,
           purpose,
         }),
       }),
