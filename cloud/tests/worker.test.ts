@@ -430,3 +430,42 @@ test("OAuth callback rejects the wrong portal and ignores external destinations"
   expect(accepted.status).toBe(302);
   expect(accepted.headers.get("location")).toBe("/#home");
 });
+
+// The hosted mailer emits eight digits; keep provider validation authoritative.
+test.each(
+  ["email", "recovery"].flatMap((purpose) =>
+    ["012345", "01234567", "0123456789"].map((token) => ({ purpose, token })),
+  ),
+)(
+  "forwards the full $token email code for $purpose to Auth",
+  async ({ purpose, token }) => {
+    const response = await request("/auth/verify-email", "POST", {
+      email: "client@example.test",
+      token,
+      purpose,
+    });
+    expect(response.status).toBe(200);
+    expect(mock.otp).toHaveBeenCalledWith({
+      email: "client@example.test",
+      token,
+      type: purpose,
+    });
+  },
+);
+test.each([
+  "12345",
+  "12345678901",
+  "12ab5678",
+  "１２３４５６７８",
+  "12345678\n",
+  12345678,
+])("rejects malformed email code %s before contacting Auth", async (token) => {
+  const response = await request("/auth/verify-email", "POST", {
+    email: "client@example.test",
+    token,
+    purpose: "email",
+  });
+  expect(response.status).toBe(400);
+  expect(mock.otp).not.toHaveBeenCalled();
+  expect(response.headers.get("set-cookie")).toBeNull();
+});
